@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:www.assistant-ui.com)",
+      "WebFetch(domain:docling-project.github.io)"
+    ]
+  }
+}
