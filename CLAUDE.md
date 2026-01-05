@@ -1,12 +1,12 @@
-# Jasque - Claude Project Guidelines
+# CLAUDE.md
 
-This document provides context and guidelines for Claude when working on the Jasque project.
-
----
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
 **Jasque** is an AI agent for Obsidian vault management. It provides natural language interaction with Obsidian vaults through an OpenAI-compatible API consumed by the Obsidian Copilot plugin.
+
+FastAPI + PostgreSQL application using **vertical slice architecture**, optimized for AI-assisted development. Python 3.12+, strict type checking with MyPy and Pyright.
 
 ### Key Technologies
 
@@ -15,20 +15,9 @@ This document provides context and guidelines for Claude when working on the Jas
 - **Docker** - Containerized deployment with vault volume mounting
 - **Anthropic Claude** - LLM provider
 - **UV** - Python package management
+- **PostgreSQL** - Database with Alembic migrations
 
----
-
-## Architecture Quick Reference
-
-```
-app/                          # Project root
-├── main.py                   # FastAPI entry point
-├── core/                     # Agent, config, dependencies
-├── shared/                   # Vault utilities, OpenAI adapter
-└── features/                 # Vertical slices (chat, notes, search, structure)
-```
-
-### Docker Context
+### Docker Context (Obsidian Vault)
 
 - Host vault path: `$OBSIDIAN_VAULT_PATH` (from `.env`)
 - Container vault path: `/vault` (fixed mount point)
@@ -47,7 +36,7 @@ app/                          # Project root
 
 ---
 
-## The 3 Tools
+## The 3 Obsidian Tools
 
 | Tool | Purpose | Operations |
 |------|---------|------------|
@@ -59,16 +48,152 @@ All tools use `obsidian_` prefix and support bulk operations.
 
 ---
 
-## Code Style Guidelines
+## Core Principles
 
-### Python
+**KISS** (Keep It Simple, Stupid)
+- Prefer simple, readable solutions over clever abstractions
 
-- Use type hints everywhere
-- Pydantic models for all data structures
-- Async functions for I/O operations
-- Follow existing patterns in codebase
+**YAGNI** (You Aren't Gonna Need It)
+- Don't build features until they're actually needed
 
-### Tool Implementation
+**Vertical Slice Architecture**
+- Each feature owns its database models, schemas, routes, and business logic
+- Features live in separate directories under `app/` (e.g., `app/features/notes/`, `app/features/search/`)
+- Shared utilities go in `app/shared/` only when used by 3+ features
+- Core infrastructure (`app/core/`) is shared across all features
+
+**Type Safety (CRITICAL)**
+- Strict type checking enforced (MyPy + Pyright in strict mode)
+- All functions, methods, and variables MUST have type annotations
+- Zero type suppressions allowed
+- No `Any` types without explicit justification
+- Test files have relaxed typing rules (see pyproject.toml)
+
+---
+
+## Essential Commands
+
+### Development
+
+```bash
+# Start development server (port 8123)
+uv run uvicorn app.main:app --reload --port 8123
+```
+
+### Testing
+
+```bash
+# Run all tests
+uv run pytest -v
+
+# Run integration tests only
+uv run pytest -v -m integration
+
+# Run specific test
+uv run pytest -v app/core/tests/test_database.py::test_function_name
+```
+
+### Type Checking (must be green)
+
+```bash
+# MyPy (strict mode)
+uv run mypy app/
+
+# Pyright (strict mode)
+uv run pyright app/
+```
+
+### Linting & Formatting (must be green)
+
+```bash
+# Check linting
+uv run ruff check .
+
+# Auto-format code
+uv run ruff format .
+```
+
+### Database Migrations
+
+```bash
+# Start PostgreSQL (Docker)
+docker-compose up -d db
+
+# Apply migrations
+uv run alembic upgrade head
+
+# Create new migration
+uv run alembic revision --autogenerate -m "description"
+
+# Rollback one migration
+uv run alembic downgrade -1
+```
+
+### Docker
+
+```bash
+# Build and start all services
+docker-compose up -d --build
+
+# View app logs
+docker-compose logs -f app
+
+# Stop all services
+docker-compose down
+```
+
+---
+
+## Architecture
+
+### Directory Structure
+
+```
+app/
+├── core/           # Infrastructure (config, database, logging, middleware, health, exceptions)
+├── shared/         # Cross-feature utilities (pagination, timestamps, error schemas)
+├── features/       # Vertical slices (notes/, search/, structure/, chat/)
+└── main.py         # FastAPI application entry point
+```
+
+### Database
+
+- Async SQLAlchemy with connection pooling (pool_size=5, max_overflow=10)
+- Base class: `app.core.database.Base`
+- Session dependency: `get_db()` from `app.core.database`
+- All models inherit `TimestampMixin` from `app.shared.models`
+
+### Logging
+
+**Philosophy:** Logs are optimized for AI agent consumption.
+
+- JSON output via structlog
+- Event naming: `domain.component.action_state` (e.g., `vault.notes.create_completed`)
+- Logger: `from app.core.logging import get_logger; logger = get_logger(__name__)`
+- Always include `exc_info=True` for exceptions
+
+---
+
+## Session Workflow
+
+### Starting a Session
+
+1. Run `/start-session` command
+2. Or manually read `CURRENT_STATE.md` and recent session logs
+
+### Ending a Session
+
+1. Run `/end-session` command
+2. This creates a session log and updates `CURRENT_STATE.md`
+3. Commit changes with descriptive message
+
+### Session Log Location
+
+`_session_logs/YYYY-MM-DD-N-description.md`
+
+---
+
+## Tool Implementation Pattern
 
 ```python
 @agent.tool
@@ -102,71 +227,6 @@ Make errors actionable:
 
 ---
 
-## Session Workflow
-
-### Starting a Session
-
-1. Run `/start-session` command
-2. Or manually read `CURRENT_STATE.md` and recent session logs
-
-### Ending a Session
-
-1. Run `/end-session` command
-2. This creates a session log and updates `CURRENT_STATE.md`
-3. Commit changes with descriptive message
-
-### Session Log Location
-
-`_session_logs/YYYY-MM-DD-N-description.md`
-
----
-
-## Testing Approach
-
-### Local Testing
-
-```bash
-# Run tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov=app
-```
-
-### Docker Testing
-
-```bash
-# Build and run
-docker compose up --build
-
-# Test endpoint
-curl http://localhost:8000/health
-curl -X POST http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model": "jasque", "messages": [{"role": "user", "content": "List my notes"}]}'
-```
-
----
-
-## Common Tasks
-
-### Adding a New Operation to Existing Tool
-
-1. Add operation to `Literal` type in signature
-2. Add operation handler in tool function
-3. Update tool docstring with new operation
-4. Add tests for new operation
-5. Update `mvp-tool-designs.md` if significant
-
-### Adding a New Feature Slice
-
-1. Create `features/new_feature/` directory
-2. Add `__init__.py`, `tools.py`, `models.py`
-3. Register tools in `core/agent.py`
-4. Update documentation
-
----
-
 ## Important Constraints
 
 1. **Path Security** - Always validate paths stay within `/vault`
@@ -183,3 +243,4 @@ curl -X POST http://localhost:8000/v1/chat/completions \
 - Create session logs when ending work
 - Keep `mvp-tool-designs.md` in sync with implementation
 - Test with actual Obsidian vault before marking complete
+- Run both MyPy and Pyright before committing

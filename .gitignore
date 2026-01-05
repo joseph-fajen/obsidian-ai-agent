@@ -1,65 +1,24 @@
-# Python
+# Python-generated files
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+*.py[oc]
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
 wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+*.egg-info
 
 # Virtual environments
-.venv/
-venv/
-ENV/
-env/
+.venv
 
-# UV
-.uv/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment variables
+# Environment variables (secrets)
 .env
-.env.local
-.env.*.local
 
-# Testing
+# Test and linting cache
 .coverage
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 
-# Docker
-*.log
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Secrets (never commit)
-*.pem
-*.key
-secrets/
+.agents/external-docs
+guide.md
+.agents/reports
