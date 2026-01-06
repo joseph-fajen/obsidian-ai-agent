@@ -1,101 +1,93 @@
-# FastAPI + PostgreSQL Template
+# Jasque
 
-Production-ready FastAPI template with vertical slice architecture, optimized for AI-assisted development.
+**AI agent for Obsidian vault management via natural language.**
 
-**Zero config • Type-safe • AI-coding-optimized**
+Jasque provides an OpenAI-compatible API that enables natural language interaction with your Obsidian vault through the Obsidian Copilot plugin.
+
+## Features
+
+- **Natural Language Vault Management** - Create, read, update, and delete notes using conversation
+- **Smart Search & Discovery** - Full-text search, tag filtering, backlinks, and task discovery
+- **Task Management** - List incomplete tasks across your vault and mark them complete
+- **Folder Organization** - Create, move, rename, and delete folders
+- **Bulk Operations** - Process multiple notes or folders in a single request
+- **OpenAI-Compatible API** - Works with Obsidian Copilot and other OpenAI-compatible clients
 
 ## Quick Start
 
 ```bash
-# 1. Use this template (GitHub) or clone
+# 1. Clone the repository
 git clone <your-repo>
-cd <your-project>
+cd jasque
 
 # 2. Install dependencies
 uv sync
 
-# 3. Start services
-docker-compose up -d
+# 3. Configure environment
+cp .env.example .env
+# Edit .env to set:
+#   - OBSIDIAN_VAULT_PATH (path to your Obsidian vault)
+#   - ANTHROPIC_API_KEY (your Anthropic API key)
 
-# 4. Run migrations
+# 4. Start PostgreSQL
+docker-compose up -d db
+
+# 5. Run migrations
 uv run alembic upgrade head
 
-# 5. Start development
+# 6. Start the server
 uv run uvicorn app.main:app --reload --port 8123
 ```
 
-Visit `http://localhost:8123/docs` for Swagger UI.
+Visit `http://localhost:8123/docs` for the API documentation.
 
-## What's Inside
+## The 3 Tools
 
-**Core Infrastructure**
+Jasque provides 3 consolidated tools following [Anthropic's best practices](https://www.anthropic.com/engineering/writing-tools-for-agents):
 
-- FastAPI with async/await
-- PostgreSQL (Docker/Supabase/Neon/Railway)
-- SQLAlchemy + Alembic migrations
-- Pydantic settings with .env support
+| Tool | Operations | Purpose |
+|------|------------|---------|
+| `obsidian_manage_notes` | read, create, update, append, delete, complete_task | Note lifecycle + tasks |
+| `obsidian_query_vault` | search_text, find_by_tag, list_notes, list_folders, get_backlinks, get_tags, list_tasks | Search & discovery |
+| `obsidian_manage_structure` | create_folder, rename, delete_folder, move, list_structure | Folder organization |
 
-**Developer Experience**
+## Architecture
 
-- Strict type checking (MyPy + Pyright)
-- Ruff linting & formatting
-- Structured logging with request correlation
-- Health check endpoints
-- Docker multi-stage builds
-
-**AI Optimization**
-
-- Grep-able event logging
-- Consistent naming patterns
-- Shared utilities (pagination, timestamps)
-- Self-correcting feedback loops
-
-## Project Structure
+Built with vertical slice architecture, optimized for AI-assisted development:
 
 ```
 app/
 ├── core/           # Infrastructure (config, database, logging, middleware)
-├── shared/         # Cross-feature utilities (pagination, timestamps)
-├── examples/       # Example feature slice (delete in your project)
-└── main.py         # FastAPI application
+├── shared/         # Cross-feature utilities (vault manager, pagination)
+├── features/       # Vertical slices (chat/, notes/, search/, structure/)
+└── main.py         # FastAPI application entry point
 ```
 
-## Customization
+## Tech Stack
 
-1. Update `name` in `pyproject.toml`
-2. Update `APP_NAME` in `.env.example`
-3. Copy `.env.example` to `.env`
-4. Update database name/credentials
-5. Delete `app/examples/` (demo feature)
-6. Build your first feature slice
+- **Agent Framework**: Pydantic AI with Anthropic Claude
+- **API**: FastAPI with OpenAI-compatible endpoints
+- **Database**: PostgreSQL with SQLAlchemy + Alembic
+- **Vault Access**: Docker volume mount (sandboxed)
+- **Type Safety**: Strict MyPy + Pyright
 
-## Database Providers
-
-Works with any PostgreSQL provider:
+## Docker Deployment
 
 ```bash
-# Docker (default)
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/mydb
+# Build and start all services (API + PostgreSQL)
+docker-compose up -d --build
 
-# Supabase
-DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres
-
-# Neon
-DATABASE_URL=postgresql+asyncpg://[USER]:[PASSWORD]@[HOST].neon.tech/[DB]?sslmode=require
-
-# Railway
-DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@[HOST].railway.app:[PORT]/railway
+# View logs
+docker-compose logs -f app
 ```
 
-## Commands
+The Obsidian vault is mounted at `/vault` inside the container, configured via `OBSIDIAN_VAULT_PATH` in your `.env` file.
+
+## Development Commands
 
 ```bash
-# Development
-uv run uvicorn app.main:app --reload --port 8123
-
-# Testing
-uv run pytest -v                    # All tests
-uv run pytest -v -m integration     # Integration tests only
+# Run tests
+uv run pytest -v
 
 # Type checking
 uv run mypy app/
@@ -105,81 +97,32 @@ uv run pyright app/
 uv run ruff check .
 uv run ruff format .
 
-# Database
+# Database migrations
 uv run alembic revision --autogenerate -m "description"
 uv run alembic upgrade head
-uv run alembic downgrade -1
-
-# Docker
-docker-compose up -d                # Start services
-docker-compose logs -f app          # View logs
-docker-compose down                 # Stop services
 ```
 
-## Slash Commands
+## Configuration
 
-Built-in Claude Code commands:
+Key environment variables (see `.env.example`):
 
-- `/commit` - Create atomic commits with proper messages
-- `/validate` - Run full validation suite (tests, types, linting, docker)
-- `/check-ignore-comments` - Analyze type suppressions
+| Variable | Description |
+|----------|-------------|
+| `OBSIDIAN_VAULT_PATH` | Path to your Obsidian vault on the host |
+| `ANTHROPIC_API_KEY` | Your Anthropic API key |
+| `DATABASE_URL` | PostgreSQL connection string |
 
-## Features
+## Documentation
 
-- Type safety: Strict mode, zero suppressions
-- Testing: 34 tests, <0.3s execution
-- Logging: JSON structured, request correlation
-- CORS: Configured for local development
-- Migrations: Alembic with async support
-- Health checks: `/health`, `/health/db`, `/health/ready`
-- Docker: Multi-stage builds, hot reload
-- Pagination: Shared utilities, consistent patterns
-- Timestamps: Automatic tracking on all models
+- `PRD.md` - Product requirements and architecture
+- `mvp-tool-designs.md` - Detailed tool specifications
+- `CLAUDE.md` - Development guidelines
 
-## Architecture Principles
+## Status
 
-**Vertical Slice**
+**Current Phase:** Scaffolding Complete, Core Infrastructure Next
 
-- Features own their database models, logic, and routes
-- Core infrastructure (config, database, logging) is shared
-- Shared utilities extracted when used by 3+ features
-
-**AI-Friendly**
-
-- Grep-able structured logging: `logger.info("feature.action.status")`
-- Type hints everywhere: AI understands contracts
-- Consistent patterns: Predictable code generation
-- Fast feedback: Linting/typing catches errors immediately
-
-## Tech Stack
-
-**Backend**
-
-- Python 3.12+
-- FastAPI 0.120+
-- SQLAlchemy 2.0+ (async)
-- Pydantic 2.0+
-
-**Database**
-
-- PostgreSQL 18 (any provider)
-- Alembic migrations
-- asyncpg driver
-
-**Dev Tools**
-
-- uv (package manager)
-- Ruff (linting/formatting)
-- MyPy + Pyright (type checking)
-- pytest (testing)
-- Docker + Docker Compose
-
-## Requirements
-
-- Python 3.12+
-- uv (or pip)
-- Docker + Docker Compose
-- PostgreSQL 18+ (via Docker or cloud provider)
+See `CURRENT_STATE.md` for detailed progress tracking.
 
 ## License
 

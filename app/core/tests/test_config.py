@@ -26,12 +26,13 @@ def test_settings_defaults() -> None:
         os.environ,
         {
             "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+            "ANTHROPIC_API_KEY": "sk-ant-test-key",
             "LOG_LEVEL": "INFO",  # Override .env file to test default value
         },
     ):
         settings = create_settings()
 
-        assert settings.app_name == "Obsidian Agent Project"
+        assert settings.app_name == "Jasque"
         assert settings.version == "0.1.0"
         assert settings.environment == "development"
         assert settings.log_level == "INFO"
@@ -51,6 +52,7 @@ def test_settings_from_environment() -> None:
             "LOG_LEVEL": "DEBUG",
             "API_PREFIX": "/v1",
             "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+            "ANTHROPIC_API_KEY": "sk-ant-test-key",
         },
     ):
         settings = create_settings()
@@ -72,6 +74,7 @@ def test_allowed_origins_parsing() -> None:
         {
             "ALLOWED_ORIGINS": '["http://example.com","http://localhost:3000","http://test.com"]',
             "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+            "ANTHROPIC_API_KEY": "sk-ant-test-key",
         },
     ):
         settings = create_settings()
@@ -102,6 +105,7 @@ def test_settings_case_insensitive() -> None:
             "app_name": "Lower Case App",
             "ENVIRONMENT": "PRODUCTION",
             "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+            "ANTHROPIC_API_KEY": "sk-ant-test-key",
         },
     ):
         settings = create_settings()

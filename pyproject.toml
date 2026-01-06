@@ -1,13 +1,16 @@
 [project]
-name = "vsa-fastapi-project"
+name = "jasque"
 version = "0.1.0"
-description = "FastAPI + PostgreSQL starter with vertical slice architecture, optimized for AI coding"
+description = "Jasque - AI agent for Obsidian vault management via natural language"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiofiles>=24.1.0",
     "alembic>=1.17.1",
+    "anthropic>=0.40.0",
     "asyncpg>=0.30.0",
     "fastapi>=0.120.1",
+    "pydantic-ai>=0.0.30",
     "pydantic-settings>=2.11.0",
     "python-dotenv>=1.2.1",
     "sqlalchemy[asyncio]>=2.0.44",
@@ -24,6 +27,7 @@ dev = [
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.2",
+    "types-aiofiles>=24.1.0",
 ]
 
 [tool.ruff]

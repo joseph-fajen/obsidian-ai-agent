@@ -6,7 +6,16 @@
       "WebFetch(domain:github.com)",
       "WebSearch",
       "WebFetch(domain:www.assistant-ui.com)",
-      "WebFetch(domain:docling-project.github.io)"
+      "WebFetch(domain:docling-project.github.io)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run mypy:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run pyright:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nSession 2026-01-06: Coherence harmonization after template integration\n\n- Establish document authority hierarchy \\(instructor infra > student PRD\\)\n- Update PRD.md: SQLite→PostgreSQL, port 8000→8123 \\(v1.2\\)\n- Update pyproject.toml: name=\"jasque\", add pydantic-ai/anthropic/aiofiles\n- Update config.py: add OBSIDIAN_VAULT_PATH and ANTHROPIC_API_KEY settings\n- Update docker-compose.yml: add vault volume mount\n- Update README.md: replace template text with Jasque description\n- Create features/ directory structure \\(chat, notes, search, structure\\)\n- Create shared/vault/ directory\n- Fix tests to use \"Jasque\" app name\n- All 66 unit tests passing, type checking green\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

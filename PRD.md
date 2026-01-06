@@ -81,7 +81,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 # Server Configuration
 HOST=0.0.0.0
-PORT=8000
+PORT=8123
 ```
 
 **How It Works:**
@@ -129,7 +129,7 @@ app/                              # PROJECT ROOT
     │   ├── __init__.py
     │   ├── routes.py             # POST /v1/chat/completions
     │   ├── models.py             # Request/Response models
-    │   └── history.py            # SQLite conversation history
+    │   └── history.py            # Conversation history (PostgreSQL)
     ├── notes/                    # Note management
     │   ├── __init__.py
     │   ├── tools.py              # obsidian_manage_notes
@@ -154,7 +154,7 @@ app/                              # PROJECT ROOT
 |----------|-------------|
 | **Tools** | 3 consolidated tools with 17 operations |
 | **API** | OpenAI-compatible `/v1/chat/completions` with streaming |
-| **History** | SQLite-based conversation persistence |
+| **History** | PostgreSQL-based conversation persistence |
 | **Notes** | Full CRUD operations + bulk support |
 | **Search** | Text search, tag filtering, backlinks, task discovery |
 | **Structure** | Folder CRUD, move/rename operations |
@@ -430,6 +430,6 @@ obsidian_manage_structure
 
 ---
 
-*Document Version: 1.1*
-*Last Updated: 2026-01-01*
+*Document Version: 1.2*
+*Last Updated: 2026-01-06*
 *Agent Name: Jasque*

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     )
 
     # Application metadata
-    app_name: str = "Obsidian Agent Project"
+    app_name: str = "Jasque"
     version: str = "0.1.0"
     environment: str = "development"
     log_level: str = "INFO"
@@ -37,6 +37,12 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str
+
+    # Obsidian Vault (mounted at /vault in container)
+    obsidian_vault_path: str = "/vault"
+
+    # LLM Provider
+    anthropic_api_key: str
 
     # CORS settings
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8123"]
