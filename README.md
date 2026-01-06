@@ -114,8 +114,8 @@ Key environment variables (see `.env.example`):
 
 ## Documentation
 
-- `PRD.md` - Product requirements and architecture
-- `mvp-tool-designs.md` - Detailed tool specifications
+- `.agents/reference/PRD.md` - Product requirements and architecture
+- `.agents/reference/mvp-tool-designs.md` - Detailed tool specifications
 - `CLAUDE.md` - Development guidelines
 
 ## Status

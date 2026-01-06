@@ -112,8 +112,8 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| `PRD.md` | Product requirements | Complete (v1.2) |
-| `mvp-tool-designs.md` | Tool specifications | Complete (v1.1) |
+| `.agents/reference/PRD.md` | Product requirements | Complete (v1.2) |
+| `.agents/reference/mvp-tool-designs.md` | Tool specifications | Complete (v1.1) |
 | `CLAUDE.md` | Project guidelines | Complete |
 | `README.md` | Project overview | Updated for Jasque |
 | `_session_logs/` | Session history | Active |
@@ -121,6 +121,16 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-06 (Session 2): Module 5.4 - Layer 1 System Integration
+  - Copied core commands: commit, execute, plan-template, prime, prime-tools
+  - Established `.agents/` directory pattern for agent workspace
+  - Organized reference docs in `.agents/reference/`
+  - Added `adding_tools_guide.md` and `vsa-patterns.md` from course
+  - Moved `mvp-tool-designs.md` to `.agents/reference/`
+  - Updated all document references across project
+  - Module 5.4 complete, ready for Layer 2 planning
+  - Session log: `_session_logs/2026-01-06-2-layer1-system-integration.md`
 
 - 2026-01-06 (Session 1): Coherence harmonization
   - Established document authority hierarchy (instructor infrastructure > student product vision)
@@ -163,8 +173,8 @@ None currently.
 
 ## Next Actions
 
-1. **Continue Module 5.4** - Integrating Global Rules & Commands
-2. **Implement VaultManager** - Core vault operations class (`shared/vault/manager.py`)
-3. **Implement first tool** - Start with `obsidian_query_vault`
-4. **Add Pydantic AI agent** - `core/agent.py` with tool bindings
-5. **Create OpenAI-compatible endpoint** - `/v1/chat/completions`
+1. **Begin Module 5.5** - Layer 2 Planning (PIV Loop)
+2. **Create implementation plan** - Use `/plan-template` for VaultManager
+3. **Implement VaultManager** - Core vault operations class (`shared/vault/manager.py`)
+4. **Implement first tool** - Start with `obsidian_query_vault`
+5. **Add Pydantic AI agent** - `core/agent.py` with tool bindings

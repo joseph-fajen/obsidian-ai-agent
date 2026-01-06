@@ -29,8 +29,8 @@ FastAPI + PostgreSQL application using **vertical slice architecture**, optimize
 
 | Document | When to Read |
 |----------|--------------|
-| `PRD.md` | Full requirements, architecture decisions |
-| `mvp-tool-designs.md` | Tool signatures, parameters, examples |
+| `.agents/reference/PRD.md` | Full requirements, architecture decisions |
+| `.agents/reference/mvp-tool-designs.md` | Tool signatures, parameters, examples |
 | `CURRENT_STATE.md` | Current progress, what's implemented |
 | `_session_logs/` | Recent session history, context |
 
@@ -241,6 +241,6 @@ Make errors actionable:
 
 - Update `CURRENT_STATE.md` when completing features
 - Create session logs when ending work
-- Keep `mvp-tool-designs.md` in sync with implementation
+- Keep `.agents/reference/mvp-tool-designs.md` in sync with implementation
 - Test with actual Obsidian vault before marking complete
 - Run both MyPy and Pyright before committing

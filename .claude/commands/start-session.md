@@ -23,10 +23,10 @@ Read `CURRENT_STATE.md` to understand:
 Familiarize with project scope:
 ```bash
 # Quick reference for tool specifications
-cat mvp-tool-designs.md
+cat .agents/reference/mvp-tool-designs.md
 
 # Full requirements if needed
-cat PRD.md
+cat .agents/reference/PRD.md
 ```
 
 ## 4. Verify Services (if running)
@@ -37,7 +37,7 @@ Check if Jasque is running:
 docker compose ps
 
 # Health check (if server is running)
-curl -s http://localhost:8000/health
+curl -s http://localhost:8123/health
 ```
 
 ## 5. Start Services If Needed
