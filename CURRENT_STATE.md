@@ -18,7 +18,7 @@
 [ ] Deployment
 ```
 
-**Current Phase:** Base Agent Complete, Ready for Tool Implementation
+**Current Phase:** OpenAI API Implementation Plan Ready
 
 ---
 
@@ -59,7 +59,7 @@
 | `features/chat/` | `/api/v1/chat/test` | ✅ Complete | Test endpoint for agent |
 | `features/chat/schemas.py` | - | ✅ Complete | ChatRequest, ChatResponse |
 | `features/chat/routes.py` | - | ✅ Complete | POST /api/v1/chat/test |
-| Chat (OpenAI) | `/v1/chat/completions` | Not started | OpenAI-compatible endpoint |
+| Chat (OpenAI) | `/v1/chat/completions` | 📋 Plan ready | See `.agents/plans/implement-openai-compatible-api.md` |
 | Notes | `obsidian_manage_notes` | Not started | 6 operations |
 | Search | `obsidian_query_vault` | Not started | 7 operations |
 | Structure | `obsidian_manage_structure` | Not started | 5 operations |
@@ -122,6 +122,9 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/reference/PRD.md` | Product requirements | Complete (v1.2) |
 | `.agents/reference/mvp-tool-designs.md` | Tool specifications | Complete (v1.1) |
 | `.agents/plans/implement-base-agent.md` | Base agent plan | ✅ Executed |
+| `.agents/plans/implement-openai-compatible-api.md` | OpenAI API plan | 📋 Ready to execute |
+| `.agents/report/research-report-obsidian-copilot-api-integration.md` | Obsidian Copilot research | Complete |
+| `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
 | `CLAUDE.md` | Project guidelines | Complete |
 | `README.md` | Project overview | Updated for Jasque |
 | `_session_logs/` | Session history | Active |
@@ -129,6 +132,14 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-07 (Session 2): OpenAI API Research & Planning
+  - Researched Obsidian Copilot OpenAI API integration (source code analysis)
+  - Researched Pydantic AI streaming with agent.iter() and SSE
+  - Created implementation plan: `.agents/plans/implement-openai-compatible-api.md`
+  - Created research reports in `.agents/report/`
+  - Plan includes 12 tasks: schemas, streaming, routes, CORS, tests, documentation
+  - Session log: `_session_logs/2026-01-07-2-openai-api-research-planning.md`
 
 - 2026-01-07 (Session 1): Base Agent Implementation
   - Executed base agent plan from `.agents/plans/implement-base-agent.md`
@@ -176,8 +187,8 @@ None currently.
 
 ## Next Actions
 
-1. **Create VaultManager plan** - Use `/plan-template` for vault operations
-2. **Implement `obsidian_query_vault`** - First tool (read-only, good for testing)
-3. **Add tool registration** - Integrate tool with base agent
-4. **Implement `obsidian_manage_notes`** - CRUD operations
-5. **Implement `obsidian_manage_structure`** - Folder operations
+1. **Execute OpenAI API plan** - Run `/execute` or follow `.agents/plans/implement-openai-compatible-api.md`
+2. **Test with Obsidian Copilot** - Validate streaming and non-streaming responses
+3. **Create VaultManager plan** - Use `/plan-template` for vault operations
+4. **Implement `obsidian_query_vault`** - First tool (read-only, good for testing)
+5. **Implement remaining tools** - `obsidian_manage_notes`, `obsidian_manage_structure`
