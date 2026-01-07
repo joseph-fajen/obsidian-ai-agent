@@ -43,6 +43,7 @@ class Settings(BaseSettings):
 
     # LLM Provider
     anthropic_api_key: str
+    anthropic_model: str = "claude-sonnet-4-5"
 
     # CORS settings
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8123"]

@@ -17,12 +17,14 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
+from app.core.agents import get_agent
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
 from app.core.health import router as health_router
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
+from app.features.chat import router as chat_router
 
 settings = get_settings()
 
@@ -52,6 +54,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     )
     logger.info("database.connection_initialized")
 
+    # Initialize agent singleton
+    get_agent()
+    logger.info("agent.lifecycle.initialized")
+
     yield
 
     # Shutdown
@@ -75,6 +81,7 @@ setup_exception_handlers(app)
 
 # Include routers
 app.include_router(health_router)
+app.include_router(chat_router, prefix="/api/v1")
 
 
 @app.get("/")

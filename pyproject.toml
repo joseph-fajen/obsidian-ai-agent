@@ -97,7 +97,7 @@ module = "*.tests.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "test_*"
+module = "conftest"
 disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
@@ -114,7 +114,9 @@ exclude = [
     ".venv",
     ".mypy_cache",
     ".pytest_cache",
-    ".ruff_cache"
+    ".ruff_cache",
+    "**/tests/**",
+    "conftest.py"
 ]
 
 # Python version configuration

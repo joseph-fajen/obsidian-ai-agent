@@ -1,17 +1,42 @@
 """Tests for app.main module."""
 
+import os
+from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+
+@pytest.fixture(autouse=True)
+def mock_environment() -> Generator[None, None, None]:
+    """Mock environment variables for tests."""
+    env_vars = {
+        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+        "ANTHROPIC_API_KEY": "sk-ant-test-key",
+        "ANTHROPIC_MODEL": "claude-sonnet-4-5",
+    }
+    with (
+        patch.dict(os.environ, env_vars),
+        patch("app.main.get_agent"),  # Mock agent initialization
+    ):
+        from app.core.agents.base import get_agent
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
+        get_agent.cache_clear()
+        yield
+        get_settings.cache_clear()
+        get_agent.cache_clear()
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client() -> Generator[TestClient, None, None]:
     """Create a test client for the FastAPI application."""
-    return TestClient(app)
+    from app.main import app
+
+    with TestClient(app) as c:
+        yield c
 
 
 def test_root_endpoint(client: TestClient) -> None:
@@ -81,8 +106,15 @@ def test_custom_request_id_preserved(client: TestClient) -> None:
 
 def test_lifespan_startup_logging() -> None:
     """Test lifespan logs application.lifecycle_started event."""
-    with patch("app.main.get_logger") as mock_get_logger:
+    with (
+        patch("app.main.get_logger") as mock_get_logger,
+        patch("app.main.get_agent") as mock_get_agent,
+    ):
         mock_logger = mock_get_logger.return_value
+        mock_get_agent.return_value = None  # Mock agent initialization
+
+        # Import app inside the patch context to use mocked components
+        from app.main import app
 
         # Create a new client to trigger lifespan
         with TestClient(app):
