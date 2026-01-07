@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(tree:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
       "WebFetch(domain:github.com)",
@@ -16,7 +17,9 @@
       "Bash(uv run pyright:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nSession 2026-01-06: Coherence harmonization after template integration\n\n- Establish document authority hierarchy \\(instructor infra > student PRD\\)\n- Update PRD.md: SQLite→PostgreSQL, port 8000→8123 \\(v1.2\\)\n- Update pyproject.toml: name=\"jasque\", add pydantic-ai/anthropic/aiofiles\n- Update config.py: add OBSIDIAN_VAULT_PATH and ANTHROPIC_API_KEY settings\n- Update docker-compose.yml: add vault volume mount\n- Update README.md: replace template text with Jasque description\n- Create features/ directory structure \\(chat, notes, search, structure\\)\n- Create shared/vault/ directory\n- Fix tests to use \"Jasque\" app name\n- All 66 unit tests passing, type checking green\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nSession 2026-01-06: Module 5.4 Layer 1 system integration complete\n\n- Copy core commands from course: commit, execute, plan-template, prime, prime-tools\n- Establish .agents/ directory pattern for agent workspace\n- Organize reference docs in .agents/reference/\n- Add adding_tools_guide.md and vsa-patterns.md from course materials\n- Move mvp-tool-designs.md and PRD.md to .agents/reference/\n- Update all document references across project\n- Module 5.4 complete, ready for Layer 2 planning \\(Module 5.5\\)\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nSession 2026-01-06: Module 5.4 Layer 1 system integration complete\n\n- Copy core commands from course: commit, execute, plan-template, prime, prime-tools\n- Establish .agents/ directory pattern for agent workspace\n- Organize reference docs in .agents/reference/\n- Add adding_tools_guide.md and vsa-patterns.md from course materials\n- Move mvp-tool-designs.md and PRD.md to .agents/reference/\n- Update all document references across project\n- Module 5.4 complete, ready for Layer 2 planning \\(Module 5.5\\)\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "WebFetch(domain:ai.pydantic.dev)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

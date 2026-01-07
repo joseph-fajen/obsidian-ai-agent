@@ -2,7 +2,7 @@
 
 Feature description: $ARGUMENTS
 
-Whats below here is a template for you to fill for the implementation agent:
+The following is a template for you to fill in for the implementation agent:
 
 ```markdown
 # Feature: <feature-name>
