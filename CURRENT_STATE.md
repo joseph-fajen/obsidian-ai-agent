@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-06
+**Last Updated:** 2026-01-07
 
 ---
 
@@ -10,7 +10,7 @@
 [x] Planning & Research
 [x] PRD & Tool Design
 [x] Project Scaffolding
-[ ] Core Infrastructure
+[x] Core Infrastructure (Base Agent)
 [ ] Tool Implementation
 [ ] API Implementation
 [ ] Integration Testing
@@ -18,7 +18,7 @@
 [ ] Deployment
 ```
 
-**Current Phase:** Scaffolding Complete, Ready for Core Infrastructure
+**Current Phase:** Base Agent Complete, Ready for Tool Implementation
 
 ---
 
@@ -28,14 +28,16 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `main.py` | ✅ Complete | FastAPI entry point with health routes |
-| `core/config.py` | ✅ Complete | pydantic-settings configuration |
+| `main.py` | ✅ Complete | FastAPI entry point with health routes + chat router |
+| `core/config.py` | ✅ Complete | pydantic-settings + anthropic_model setting |
 | `core/database.py` | ✅ Complete | Async SQLAlchemy setup |
 | `core/logging.py` | ✅ Complete | Structlog JSON logging |
 | `core/middleware.py` | ✅ Complete | Request ID, CORS middleware |
 | `core/health.py` | ✅ Complete | Health check endpoints |
 | `core/exceptions.py` | ✅ Complete | Exception handlers |
-| `core/agent.py` | Not started | Pydantic AI agent |
+| `core/agents/` | ✅ Complete | Pydantic AI agent package |
+| `core/agents/base.py` | ✅ Complete | create_agent() + get_agent() singleton |
+| `core/agents/types.py` | ✅ Complete | AgentDependencies, TokenUsage |
 | `core/dependencies.py` | Not started | VaultDependencies |
 
 ### Shared Utilities
@@ -54,8 +56,10 @@
 
 | Feature | Tool | Status | Notes |
 |---------|------|--------|-------|
-| `features/` | - | ✅ Directory created | Vertical slice structure ready |
-| Chat | `/v1/chat/completions` | Not started | OpenAI-compatible endpoint |
+| `features/chat/` | `/api/v1/chat/test` | ✅ Complete | Test endpoint for agent |
+| `features/chat/schemas.py` | - | ✅ Complete | ChatRequest, ChatResponse |
+| `features/chat/routes.py` | - | ✅ Complete | POST /api/v1/chat/test |
+| Chat (OpenAI) | `/v1/chat/completions` | Not started | OpenAI-compatible endpoint |
 | Notes | `obsidian_manage_notes` | Not started | 6 operations |
 | Search | `obsidian_query_vault` | Not started | 7 operations |
 | Structure | `obsidian_manage_structure` | Not started | 5 operations |
@@ -72,9 +76,10 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 66 passing | Core and shared modules |
+| Unit tests | ✅ 77 passing | Core, shared, agents, chat modules |
 | Integration tests | ⚠️ 6 failing | Require running PostgreSQL |
 | Model tests | ⚠️ 3 errors | Require database connection |
+| E2E test | ✅ Verified | curl to /api/v1/chat/test works |
 
 ---
 
@@ -85,6 +90,7 @@
 | Jasque API | Available | 8123 | `uv run uvicorn app.main:app --reload --port 8123` |
 | PostgreSQL | Available | 5433 | `docker-compose up -d db` |
 | Health endpoint | Working | - | `/health`, `/health/db`, `/health/ready` |
+| Chat test endpoint | Working | - | POST `/api/v1/chat/test` |
 
 ---
 
@@ -97,6 +103,7 @@
 APP_NAME=Jasque
 OBSIDIAN_VAULT_PATH=/path/to/vault  # Host path, mounted to /vault in container
 ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-sonnet-4-5   # Default model
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ```
 
@@ -114,6 +121,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 |----------|---------|--------|
 | `.agents/reference/PRD.md` | Product requirements | Complete (v1.2) |
 | `.agents/reference/mvp-tool-designs.md` | Tool specifications | Complete (v1.1) |
+| `.agents/plans/implement-base-agent.md` | Base agent plan | ✅ Executed |
 | `CLAUDE.md` | Project guidelines | Complete |
 | `README.md` | Project overview | Updated for Jasque |
 | `_session_logs/` | Session history | Active |
@@ -122,53 +130,40 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 ## Recent Changes
 
+- 2026-01-07 (Session 1): Base Agent Implementation
+  - Executed base agent plan from `.agents/plans/implement-base-agent.md`
+  - Created `app/core/agents/` package (types.py, base.py, tests)
+  - Implemented singleton agent with @lru_cache pattern
+  - Created chat feature with `/api/v1/chat/test` endpoint
+  - Added `anthropic_model` config setting (default: claude-sonnet-4-5)
+  - Added root `conftest.py` for project-wide fixtures
+  - Fixed pyproject.toml mypy/pyright config for test files
+  - All 77 unit tests passing, E2E verified with curl
+  - Session log: `_session_logs/2026-01-07-1-base-agent-implementation.md`
+
 - 2026-01-06 (Session 3): Base Agent Planning
   - Researched Pydantic AI documentation at https://ai.pydantic.dev/
   - Created comprehensive implementation plan: `.agents/plans/implement-base-agent.md`
   - Plan covers: Agent types, base factory, chat schemas, test endpoint, fixtures, tests
   - 14 step-by-step tasks with validation commands
-  - Ready for `/execute` to implement base agent
   - Session log: `_session_logs/2026-01-06-3-base-agent-planning.md`
 
 - 2026-01-06 (Session 2): Module 5.4 - Layer 1 System Integration
   - Copied core commands: commit, execute, plan-template, prime, prime-tools
   - Established `.agents/` directory pattern for agent workspace
   - Organized reference docs in `.agents/reference/`
-  - Added `adding_tools_guide.md` and `vsa-patterns.md` from course
-  - Moved `mvp-tool-designs.md` to `.agents/reference/`
-  - Updated all document references across project
-  - Module 5.4 complete, ready for Layer 2 planning
   - Session log: `_session_logs/2026-01-06-2-layer1-system-integration.md`
 
 - 2026-01-06 (Session 1): Coherence harmonization
-  - Established document authority hierarchy (instructor infrastructure > student product vision)
-  - Updated PRD.md: SQLite→PostgreSQL, port 8000→8123 (v1.2)
-  - Updated pyproject.toml: name to "jasque", added pydantic-ai/anthropic/aiofiles deps
-  - Updated config.py: added OBSIDIAN_VAULT_PATH and ANTHROPIC_API_KEY settings
-  - Updated docker-compose.yml: added vault volume mount (${OBSIDIAN_VAULT_PATH}:/vault:rw)
-  - Updated README.md: replaced template text with Jasque description
-  - Created features/ directory structure (chat/, notes/, search/, structure/)
-  - Created shared/vault/ directory
-  - Fixed tests to use "Jasque" app name
+  - Updated PRD.md, pyproject.toml, config.py, docker-compose.yml
   - All 66 unit tests passing, type checking green
 
 - 2026-01-05 (Session 1): FastAPI template integration
   - Integrated FastAPI starter template into project
-  - Added `app/` directory with core infrastructure (config, database, logging, middleware, health, exceptions)
-  - Added `alembic/` for database migrations
-  - Added `docker-compose.yml` with PostgreSQL setup
-  - Merged CLAUDE.md (project-specific + template content)
-  - Added 6 Claude commands (init-project, validate, commit, check-ignore-comments, start-session, end-session)
-  - Validated template: uv sync, docker, migrations, health checks all working
   - Session log: `_session_logs/2026-01-05-1-template-integration.md`
 
 - 2026-01-01 (Session 1): Initial planning session
-  - Created PRD.md with full requirements (v1.1)
-  - Created mvp-tool-designs.md with tool specifications (v1.1)
-  - Created CLAUDE.md project guidelines
-  - Set up session management commands (start-session, end-session)
-  - Established Docker volume mounting strategy
-  - Initialized git repository
+  - Created PRD.md, mvp-tool-designs.md, CLAUDE.md
   - Session log: `_session_logs/2026-01-01-1-initial-planning.md`
 
 ---
@@ -181,8 +176,8 @@ None currently.
 
 ## Next Actions
 
-1. **Execute base agent plan** - Run `/execute` with `.agents/plans/implement-base-agent.md`
-2. **Validate implementation** - Run `uv run mypy app/` and `uv run pytest -v`
-3. **Manual test** - `curl POST /api/v1/chat/test` with real API key
-4. **Create VaultManager plan** - Use `/plan-template` for vault operations
-5. **Implement first tool** - `obsidian_query_vault` after VaultManager
+1. **Create VaultManager plan** - Use `/plan-template` for vault operations
+2. **Implement `obsidian_query_vault`** - First tool (read-only, good for testing)
+3. **Add tool registration** - Integrate tool with base agent
+4. **Implement `obsidian_manage_notes`** - CRUD operations
+5. **Implement `obsidian_manage_structure`** - Folder operations
