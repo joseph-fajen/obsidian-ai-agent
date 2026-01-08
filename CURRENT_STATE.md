@@ -139,6 +139,14 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 ## Recent Changes
 
+- 2026-01-07 (Session 4): Command Optimization
+  - Analyzed redundancy between `/prime` and `/start-session`
+  - Added `deep` mode to `/start-session` for full codebase analysis
+  - Analyzed redundancy between `/commit` and `/end-session`
+  - Added `commit` mode to `/end-session` for thorough conventional commits
+  - Established composition pattern: default (light) + flag (thorough)
+  - Session log: `_session_logs/2026-01-07-4-command-optimization.md`
+
 - 2026-01-07 (Session 3): OpenAI-Compatible API Implementation
   - Implemented `/v1/chat/completions` endpoint with streaming and non-streaming support
   - Created `openai_schemas.py` with Pydantic models matching OpenAI format
