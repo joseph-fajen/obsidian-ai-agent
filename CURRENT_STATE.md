@@ -11,14 +11,14 @@
 [x] PRD & Tool Design
 [x] Project Scaffolding
 [x] Core Infrastructure (Base Agent)
+[x] API Implementation (OpenAI-compatible)
 [ ] Tool Implementation
-[ ] API Implementation
 [ ] Integration Testing
 [ ] Documentation
 [ ] Deployment
 ```
 
-**Current Phase:** OpenAI API Implementation Plan Ready
+**Current Phase:** API Implementation Complete, Ready for Tool Implementation
 
 ---
 
@@ -59,7 +59,10 @@
 | `features/chat/` | `/api/v1/chat/test` | ✅ Complete | Test endpoint for agent |
 | `features/chat/schemas.py` | - | ✅ Complete | ChatRequest, ChatResponse |
 | `features/chat/routes.py` | - | ✅ Complete | POST /api/v1/chat/test |
-| Chat (OpenAI) | `/v1/chat/completions` | 📋 Plan ready | See `.agents/plans/implement-openai-compatible-api.md` |
+| Chat (OpenAI) | `/v1/chat/completions` | ✅ Complete | Streaming + non-streaming, Obsidian Copilot verified |
+| `features/chat/openai_schemas.py` | - | ✅ Complete | OpenAI request/response models |
+| `features/chat/streaming.py` | - | ✅ Complete | SSE generator using agent.iter() |
+| `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint |
 | Notes | `obsidian_manage_notes` | Not started | 6 operations |
 | Search | `obsidian_query_vault` | Not started | 7 operations |
 | Structure | `obsidian_manage_structure` | Not started | 5 operations |
@@ -76,10 +79,11 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 77 passing | Core, shared, agents, chat modules |
+| Unit tests | ✅ 107 passing | Core, shared, agents, chat (incl. OpenAI) modules |
 | Integration tests | ⚠️ 6 failing | Require running PostgreSQL |
 | Model tests | ⚠️ 3 errors | Require database connection |
-| E2E test | ✅ Verified | curl to /api/v1/chat/test works |
+| E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
+| Obsidian Copilot | ✅ Verified | Chat with Jasque via Obsidian works |
 
 ---
 
@@ -91,6 +95,7 @@
 | PostgreSQL | Available | 5433 | `docker-compose up -d db` |
 | Health endpoint | Working | - | `/health`, `/health/db`, `/health/ready` |
 | Chat test endpoint | Working | - | POST `/api/v1/chat/test` |
+| OpenAI endpoint | Working | - | POST `/v1/chat/completions` (streaming + non-streaming) |
 
 ---
 
@@ -121,8 +126,9 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 |----------|---------|--------|
 | `.agents/reference/PRD.md` | Product requirements | Complete (v1.2) |
 | `.agents/reference/mvp-tool-designs.md` | Tool specifications | Complete (v1.1) |
+| `.agents/reference/obsidian-copilot-setup.md` | Obsidian Copilot config | Complete |
 | `.agents/plans/implement-base-agent.md` | Base agent plan | ✅ Executed |
-| `.agents/plans/implement-openai-compatible-api.md` | OpenAI API plan | 📋 Ready to execute |
+| `.agents/plans/implement-openai-compatible-api.md` | OpenAI API plan | ✅ Executed |
 | `.agents/report/research-report-obsidian-copilot-api-integration.md` | Obsidian Copilot research | Complete |
 | `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
 | `CLAUDE.md` | Project guidelines | Complete |
@@ -132,6 +138,17 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-07 (Session 3): OpenAI-Compatible API Implementation
+  - Implemented `/v1/chat/completions` endpoint with streaming and non-streaming support
+  - Created `openai_schemas.py` with Pydantic models matching OpenAI format
+  - Created `streaming.py` with SSE generator using `agent.iter()` and `node.stream()`
+  - Created `openai_routes.py` with endpoint handling both response types
+  - Configured CORS for Obsidian Copilot (`app://obsidian.md`)
+  - Added 30 new unit tests (107 total passing)
+  - Created user documentation: `.agents/reference/obsidian-copilot-setup.md`
+  - E2E verified with curl and Obsidian Copilot plugin
+  - Session log: `_session_logs/2026-01-07-3-openai-api-implementation.md`
 
 - 2026-01-07 (Session 2): OpenAI API Research & Planning
   - Researched Obsidian Copilot OpenAI API integration (source code analysis)
@@ -187,8 +204,8 @@ None currently.
 
 ## Next Actions
 
-1. **Execute OpenAI API plan** - Run `/execute` or follow `.agents/plans/implement-openai-compatible-api.md`
-2. **Test with Obsidian Copilot** - Validate streaming and non-streaming responses
-3. **Create VaultManager plan** - Use `/plan-template` for vault operations
-4. **Implement `obsidian_query_vault`** - First tool (read-only, good for testing)
-5. **Implement remaining tools** - `obsidian_manage_notes`, `obsidian_manage_structure`
+1. **Plan VaultManager implementation** - Use `/plan-template` for file I/O operations
+2. **Implement `obsidian_query_vault`** - Read-only tool (safest for initial testing)
+3. **Implement `obsidian_manage_notes`** - Note CRUD operations
+4. **Implement `obsidian_manage_structure`** - Folder management
+5. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)

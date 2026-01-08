@@ -45,8 +45,12 @@ class Settings(BaseSettings):
     anthropic_api_key: str
     anthropic_model: str = "claude-sonnet-4-5"
 
-    # CORS settings
-    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8123"]
+    # CORS settings (app://obsidian.md is the Electron app origin for Obsidian Copilot)
+    allowed_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8123",
+        "app://obsidian.md",
+    ]
 
 
 @lru_cache

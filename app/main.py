@@ -24,7 +24,7 @@ from app.core.exceptions import setup_exception_handlers
 from app.core.health import router as health_router
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
-from app.features.chat import router as chat_router
+from app.features.chat import openai_router, router as chat_router
 
 settings = get_settings()
 
@@ -82,6 +82,7 @@ setup_exception_handlers(app)
 # Include routers
 app.include_router(health_router)
 app.include_router(chat_router, prefix="/api/v1")
+app.include_router(openai_router, prefix="/v1")  # OpenAI-compatible endpoint
 
 
 @app.get("/")
