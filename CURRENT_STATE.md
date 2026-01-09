@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-08
+**Last Updated:** 2026-01-09
 
 ---
 
@@ -64,7 +64,7 @@
 | `features/chat/streaming.py` | - | ✅ Complete | SSE generator using agent.iter() |
 | `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint |
 | Notes | `obsidian_manage_notes` | Not started | 6 operations |
-| Search | `obsidian_query_vault` | Not started | 7 operations |
+| Search | `obsidian_query_vault` | **Plan Ready** | 7 operations - `.agents/plans/implement-obsidian-query-vault-tool.md` |
 | Structure | `obsidian_manage_structure` | Not started | 5 operations |
 
 ### Docker
@@ -129,6 +129,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/reference/obsidian-copilot-setup.md` | Obsidian Copilot config | Complete |
 | `.agents/plans/implement-base-agent.md` | Base agent plan | ✅ Executed |
 | `.agents/plans/implement-openai-compatible-api.md` | OpenAI API plan | ✅ Executed |
+| `.agents/plans/implement-obsidian-query-vault-tool.md` | First tool plan | Ready to execute |
 | `.agents/report/research-report-obsidian-copilot-api-integration.md` | Obsidian Copilot research | Complete |
 | `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
 | `CLAUDE.md` | Project guidelines | Complete |
@@ -138,6 +139,14 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-09 (Session 1): obsidian_query_vault Tool Planning
+  - Deep session with full codebase and reference document analysis
+  - Researched Pydantic AI FunctionToolset patterns (RunContext, tool registration)
+  - Evaluated naming conventions (verbose for features, generic for shared/core)
+  - Created comprehensive 19-task implementation plan
+  - Decisions: python-frontmatter for YAML, aiofiles for async I/O, tmp_path for tests
+  - Session log: `_session_logs/2026-01-09-1-obsidian-query-vault-planning.md`
 
 - 2026-01-08 (Session 2): PIV Loop Commands Migration
   - Copied core PIV loop commands from agentic-coding-course
@@ -227,8 +236,8 @@ None currently.
 
 ## Next Actions
 
-1. **Test `/plan-feature` command** - Run on `obsidian_query_vault` to validate the new command
-2. **Implement `obsidian_query_vault`** - Using the generated plan from `/plan-feature`
-3. **Implement `obsidian_manage_notes`** - Note CRUD operations
+1. **Execute `obsidian_query_vault` plan** - `/execute .agents/plans/implement-obsidian-query-vault-tool.md`
+2. **Test with Obsidian Copilot** - Manual testing after implementation
+3. **Implement `obsidian_manage_notes`** - Note CRUD operations (use same planning pattern)
 4. **Implement `obsidian_manage_structure`** - Folder management
 5. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)

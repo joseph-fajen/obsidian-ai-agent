@@ -37,7 +37,10 @@
       "Bash(docker:*)",
       "Bash(git --version:*)",
       "Bash(timeout 10 uv run:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(uv pip list:*)",
+      "WebFetch(domain:python-frontmatter.readthedocs.io)"
     ]
   }
 }
