@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-08
 
 ---
 
@@ -139,6 +139,14 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 ## Recent Changes
 
+- 2026-01-08 (Session 1): Plan Feature Command (Course Exercise)
+  - Verified .zshrc compatibility after system troubleshooting
+  - Created global `~/.claude/CLAUDE.md` with GitHub CLI preference
+  - Completed Module 5.7 exercise: Template planning workflow
+  - Created `/plan-feature` command combining research + planning (7 phases, 3 checkpoints)
+  - Fixed import sorting in `app/main.py`
+  - Session log: `_session_logs/2026-01-08-1-plan-feature-command.md`
+
 - 2026-01-07 (Session 4): Command Optimization
   - Analyzed redundancy between `/prime` and `/start-session`
   - Added `deep` mode to `/start-session` for full codebase analysis
@@ -212,8 +220,8 @@ None currently.
 
 ## Next Actions
 
-1. **Plan VaultManager implementation** - Use `/plan-template` for file I/O operations
-2. **Implement `obsidian_query_vault`** - Read-only tool (safest for initial testing)
+1. **Test `/plan-feature` command** - Run on `obsidian_query_vault` to validate the new command
+2. **Implement `obsidian_query_vault`** - Using the generated plan from `/plan-feature`
 3. **Implement `obsidian_manage_notes`** - Note CRUD operations
 4. **Implement `obsidian_manage_structure`** - Folder management
 5. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)

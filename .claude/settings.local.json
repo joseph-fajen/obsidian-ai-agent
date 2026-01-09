@@ -21,7 +21,23 @@
       "WebFetch(domain:ai.pydantic.dev)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(uv run python:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git commit:*)",
+      "Bash(claude doctor)",
+      "Bash(brew list:*)",
+      "WebFetch(domain:www.obsidiancopilot.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:platform.openai.com)",
+      "WebFetch(domain:lmstudio.ai)",
+      "Bash(mkdir:*)",
+      "Bash(uv run:*)",
+      "Bash(uv --version:*)",
+      "Bash(node --version)",
+      "Bash(echo:*)",
+      "Bash(docker:*)",
+      "Bash(git --version:*)",
+      "Bash(timeout 10 uv run:*)",
+      "Bash(gh api:*)"
     ]
   }
 }
