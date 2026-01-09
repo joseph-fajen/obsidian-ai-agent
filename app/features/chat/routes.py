@@ -1,9 +1,12 @@
 """Chat feature routes for testing the Pydantic AI agent."""
 
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.agents import AgentDependencies, get_agent
 from app.core.agents.types import TokenUsage
+from app.core.config import get_settings
 from app.core.logging import get_logger, get_request_id
 from app.features.chat.schemas import ChatRequest, ChatResponse
 
@@ -29,7 +32,11 @@ async def test_chat(request: ChatRequest) -> ChatResponse:
     """
     agent = get_agent()
     request_id = get_request_id()
-    deps = AgentDependencies(request_id=request_id)
+    settings = get_settings()
+    deps = AgentDependencies(
+        request_id=request_id,
+        vault_path=Path(settings.obsidian_vault_path),
+    )
 
     logger.info(
         "agent.llm.call_started",

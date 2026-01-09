@@ -1,6 +1,7 @@
 """Type definitions for Pydantic AI agents."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -10,6 +11,7 @@ class AgentDependencies:
     """Dependencies injected into agent tools via RunContext."""
 
     request_id: str = ""
+    vault_path: Path = field(default_factory=lambda: Path("/vault"))
 
 
 class TokenUsage(BaseModel):

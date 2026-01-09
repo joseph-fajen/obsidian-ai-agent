@@ -9,11 +9,13 @@ automatically appends /chat/completions to the base URL.
 
 import time
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app.core.agents import AgentDependencies, get_agent
+from app.core.config import get_settings
 from app.core.logging import get_logger, get_request_id
 from app.features.chat.openai_schemas import (
     ChatCompletionChoice,
@@ -55,7 +57,11 @@ async def chat_completions(
     """
     agent = get_agent()
     request_id = get_request_id()
-    deps = AgentDependencies(request_id=request_id)
+    settings = get_settings()
+    deps = AgentDependencies(
+        request_id=request_id,
+        vault_path=Path(settings.obsidian_vault_path),
+    )
 
     # Extract the last user message for the agent
     user_message = extract_last_user_message(request.messages)

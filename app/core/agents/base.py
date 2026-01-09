@@ -13,20 +13,37 @@ logger = get_logger(__name__)
 
 SYSTEM_PROMPT = """You are Jasque, an AI assistant for Obsidian vault management.
 
-You help users interact with their Obsidian vault through natural language.
-You can search notes, create and modify content, manage tasks, and organize folders.
+You help users interact with their Obsidian vault using natural language.
 
-Be concise and helpful. When you don't have access to a tool needed for a task,
-explain what you would need to accomplish it.
+## Available Tools
 
-Current capabilities:
-- Conversational responses
-- (Tools will be added in future updates)
+You have access to the following tool:
+
+### obsidian_query_vault
+Search and query the Obsidian vault. Operations:
+- search_text: Full-text search across notes (requires query param)
+- find_by_tag: Find notes with specific tags (requires tags param)
+- list_notes: List notes in vault or folder
+- list_folders: Get folder structure
+- get_backlinks: Find notes linking to a specific note (requires path param)
+- get_tags: Get all unique tags in vault
+- list_tasks: Find task checkboxes
+
+Use response_format="concise" (default) for brief results, "detailed" for full content.
+
+## Guidelines
+
+- Always use the appropriate tool to answer questions about the vault
+- When searching, start with concise format and only use detailed if needed
+- If a search returns no results, suggest alternative queries
+- Be helpful and conversational while being efficient with tool calls
+- For tasks that require reading or modifying notes, inform the user those
+  capabilities will be added soon (obsidian_manage_notes, obsidian_manage_structure)
 """
 
 
 def create_agent() -> Agent[AgentDependencies, str]:
-    """Create a new Pydantic AI agent instance.
+    """Create a new Pydantic AI agent instance with tools.
 
     Returns:
         A configured Pydantic AI Agent with AgentDependencies and string output.
@@ -40,14 +57,25 @@ def create_agent() -> Agent[AgentDependencies, str]:
     model_name = f"anthropic:{settings.anthropic_model}"
     logger.info("agent.lifecycle.creating", model=settings.anthropic_model)
 
+    # Create toolset with registered tools
+    # Import here to avoid circular import
+    from app.core.agents.tool_registry import create_obsidian_toolset
+
+    toolset = create_obsidian_toolset()
+
     agent: Agent[AgentDependencies, str] = Agent(
         model_name,
         deps_type=AgentDependencies,
         output_type=str,
         instructions=SYSTEM_PROMPT,
+        toolsets=[toolset],
     )
 
-    logger.info("agent.lifecycle.created", model=settings.anthropic_model)
+    logger.info(
+        "agent.lifecycle.created",
+        model=settings.anthropic_model,
+        tools=["obsidian_query_vault"],
+    )
     return agent
 
 

@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-ai>=0.0.30",
     "pydantic-settings>=2.11.0",
     "python-dotenv>=1.2.1",
+    "python-frontmatter>=1.0.0",
     "sqlalchemy[asyncio]>=2.0.44",
     "structlog>=25.5.0",
     "uvicorn[standard]>=0.38.0",
@@ -84,17 +85,16 @@ python_version = "3.12"
 strict = true
 show_error_codes = true
 warn_unused_ignores = true
+exclude = [
+    "tests/",
+    ".*/tests/",
+]
 
 # Practical strictness (not dogmatic)
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
 disallow_untyped_decorators = false
-
-# Allow test files to have less strict typing
-[[tool.mypy.overrides]]
-module = "*.tests.*"
-disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = "conftest"

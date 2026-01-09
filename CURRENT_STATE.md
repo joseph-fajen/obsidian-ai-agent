@@ -18,7 +18,7 @@
 [ ] Deployment
 ```
 
-**Current Phase:** API Implementation Complete, Ready for Tool Implementation
+**Current Phase:** Tool Implementation In Progress (1 of 3 tools complete)
 
 ---
 
@@ -47,9 +47,9 @@
 | `shared/models.py` | ✅ Complete | TimestampMixin base model |
 | `shared/schemas.py` | ✅ Complete | Pagination, error response schemas |
 | `shared/utils.py` | ✅ Complete | UTC datetime utilities |
-| `shared/vault/` | ✅ Directory created | Ready for VaultManager |
-| `shared/vault/manager.py` | Not started | VaultManager class |
-| `shared/vault/models.py` | Not started | Vault domain models |
+| `shared/vault/` | ✅ Complete | VaultManager package |
+| `shared/vault/manager.py` | ✅ Complete | VaultManager with 7 query operations |
+| `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy |
 | `shared/openai_adapter.py` | Not started | OpenAI format helpers |
 
 ### Features
@@ -64,7 +64,7 @@
 | `features/chat/streaming.py` | - | ✅ Complete | SSE generator using agent.iter() |
 | `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint |
 | Notes | `obsidian_manage_notes` | Not started | 6 operations |
-| Search | `obsidian_query_vault` | **Plan Ready** | 7 operations - `.agents/plans/implement-obsidian-query-vault-tool.md` |
+| Search | `obsidian_query_vault` | ✅ Complete | 7 operations - 51 tests |
 | Structure | `obsidian_manage_structure` | Not started | 5 operations |
 
 ### Docker
@@ -79,7 +79,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 107 passing | Core, shared, agents, chat (incl. OpenAI) modules |
+| Unit tests | ✅ 167 passing | Core, shared, agents, chat, vault, tools |
 | Integration tests | ⚠️ 6 failing | Require running PostgreSQL |
 | Model tests | ⚠️ 3 errors | Require database connection |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
@@ -117,6 +117,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 - `pydantic-ai` - Agent framework
 - `anthropic` - LLM provider
 - `aiofiles` - Async file I/O for vault operations
+- `python-frontmatter` - YAML frontmatter parsing
 
 ---
 
@@ -129,7 +130,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/reference/obsidian-copilot-setup.md` | Obsidian Copilot config | Complete |
 | `.agents/plans/implement-base-agent.md` | Base agent plan | ✅ Executed |
 | `.agents/plans/implement-openai-compatible-api.md` | OpenAI API plan | ✅ Executed |
-| `.agents/plans/implement-obsidian-query-vault-tool.md` | First tool plan | Ready to execute |
+| `.agents/plans/implement-obsidian-query-vault-tool.md` | First tool plan | ✅ Executed |
 | `.agents/report/research-report-obsidian-copilot-api-integration.md` | Obsidian Copilot research | Complete |
 | `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
 | `CLAUDE.md` | Project guidelines | Complete |
@@ -139,6 +140,16 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-09 (Session 2): obsidian_query_vault Tool Implementation
+  - Executed all 19 tasks from implementation plan
+  - Created VaultManager with 7 query operations (list_notes, list_folders, read_note, search_text, find_by_tag, get_backlinks, get_tags, list_tasks)
+  - Implemented obsidian_query_vault tool with Pydantic AI FunctionToolset
+  - Created tool_registry.py for centralized tool registration
+  - Added 51 new tests (36 VaultManager + 15 tool tests)
+  - Fixed circular import with lazy imports in `__init__.py`
+  - All validation green: ruff, mypy, pyright, pytest (167 tests)
+  - Session log: `_session_logs/2026-01-09-2-obsidian-query-vault-implementation.md`
 
 - 2026-01-09 (Session 1): obsidian_query_vault Tool Planning
   - Deep session with full codebase and reference document analysis
@@ -236,8 +247,7 @@ None currently.
 
 ## Next Actions
 
-1. **Execute `obsidian_query_vault` plan** - `/execute .agents/plans/implement-obsidian-query-vault-tool.md`
-2. **Test with Obsidian Copilot** - Manual testing after implementation
-3. **Implement `obsidian_manage_notes`** - Note CRUD operations (use same planning pattern)
-4. **Implement `obsidian_manage_structure`** - Folder management
-5. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
+1. **Manual testing** - Test `obsidian_query_vault` with Obsidian Copilot end-to-end
+2. **Plan `obsidian_manage_notes`** - Note CRUD operations (`/plan-feature`)
+3. **Plan `obsidian_manage_structure`** - Folder management
+4. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
