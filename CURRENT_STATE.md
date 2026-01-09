@@ -139,6 +139,13 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 ## Recent Changes
 
+- 2026-01-08 (Session 2): PIV Loop Commands Migration
+  - Copied core PIV loop commands from agentic-coding-course
+  - Replaced `/execute` with comprehensive 5-step version
+  - Merged `/plan-feature` (user checkpoints + source detailed template)
+  - Kept `/prime` and `/prime-tools` unchanged (already optimal)
+  - Session log: `_session_logs/2026-01-08-2-piv-loop-commands.md`
+
 - 2026-01-08 (Session 1): Plan Feature Command (Course Exercise)
   - Verified .zshrc compatibility after system troubleshooting
   - Created global `~/.claude/CLAUDE.md` with GitHub CLI preference
