@@ -141,6 +141,15 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 ## Recent Changes
 
+- 2026-01-09 (Session 3): Fix Streaming First Token Issue
+  - Diagnosed missing first token in streaming responses ("!" instead of "Hello!")
+  - Root cause: `PartStartEvent` contains initial text, not just `PartDeltaEvent`
+  - Added `PartStartEvent` handling in `streaming.py`
+  - Updated research report with correct streaming pattern
+  - Added test case for `PartStartEvent` handling
+  - Verified fix with Obsidian Copilot - first token now streams correctly
+  - Session log: `_session_logs/2026-01-09-3-fix-streaming-first-token.md`
+
 - 2026-01-09 (Session 2): obsidian_query_vault Tool Implementation
   - Executed all 19 tasks from implementation plan
   - Created VaultManager with 7 query operations (list_notes, list_folders, read_note, search_text, find_by_tag, get_backlinks, get_tags, list_tasks)

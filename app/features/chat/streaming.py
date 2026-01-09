@@ -17,6 +17,7 @@ from pydantic_ai.messages import (
     ModelRequest,
     ModelResponse,
     PartDeltaEvent,
+    PartStartEvent,
     TextPart,
     TextPartDelta,
     UserPromptPart,
@@ -136,18 +137,27 @@ async def generate_sse_stream(
                 if Agent.is_model_request_node(node):
                     async with node.stream(run.ctx) as stream:
                         async for event in stream:
-                            if isinstance(event, PartDeltaEvent):
+                            content: str | None = None
+
+                            # Handle PartStartEvent - contains initial text content!
+                            if isinstance(event, PartStartEvent):
+                                if isinstance(event.part, TextPart) and event.part.content:
+                                    content = event.part.content
+                            # Handle PartDeltaEvent - contains subsequent text deltas
+                            elif isinstance(event, PartDeltaEvent):
                                 if isinstance(event.delta, TextPartDelta):
                                     content = event.delta.content_delta
-                                    total_content += content
 
-                                    content_chunk = ChatCompletionChunk(
-                                        id=chat_id,
-                                        created=created,
-                                        model=model_name,
-                                        choices=[ChunkChoice(delta=DeltaContent(content=content))],
-                                    )
-                                    yield f"data: {content_chunk.model_dump_json()}\n\n"
+                            # Yield content if we extracted any
+                            if content:
+                                total_content += content
+                                content_chunk = ChatCompletionChunk(
+                                    id=chat_id,
+                                    created=created,
+                                    model=model_name,
+                                    choices=[ChunkChoice(delta=DeltaContent(content=content))],
+                                )
+                                yield f"data: {content_chunk.model_dump_json()}\n\n"
 
             # Get usage after run completes
             if include_usage:

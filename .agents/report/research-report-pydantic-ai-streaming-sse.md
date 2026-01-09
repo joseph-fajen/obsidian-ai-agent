@@ -36,6 +36,7 @@ For `ModelRequestNode`, call `.stream()` to access streaming events:
 from pydantic_ai.messages import (
     PartDeltaEvent,
     PartStartEvent,
+    TextPart,
     TextPartDelta,
 )
 
@@ -45,8 +46,9 @@ async with agent.iter(user_prompt, deps=deps) as run:
             async with node.stream(run.ctx) as request_stream:
                 async for event in request_stream:
                     if isinstance(event, PartStartEvent):
-                        # New part starting (e.g., text, tool_call)
-                        pass
+                        # IMPORTANT: Initial text content is in PartStartEvent!
+                        if isinstance(event.part, TextPart) and event.part.content:
+                            yield event.part.content
                     elif isinstance(event, PartDeltaEvent):
                         if isinstance(event.delta, TextPartDelta):
                             # Extract text delta
@@ -70,11 +72,13 @@ from pydantic_ai.messages import (
 
 | Event | When to Yield |
 |-------|---------------|
-| `PartStartEvent` | Skip (just marks start) |
+| `PartStartEvent` with `TextPart` | **Yield `event.part.content`** (contains initial text!) |
 | `PartDeltaEvent` with `TextPartDelta` | **Yield `event.delta.content_delta`** |
 | `PartDeltaEvent` with `ThinkingPartDelta` | Skip (internal reasoning) |
 | `PartDeltaEvent` with `ToolCallPartDelta` | Skip (tool invocation) |
 | `FinalResultEvent` | May signal completion |
+
+**IMPORTANT:** The `PartStartEvent` may contain the initial text content in `event.part.content`. If you only handle `PartDeltaEvent`, you will miss the first token(s) of the response. Always check `PartStartEvent` for `TextPart` content first.
 
 ### Message History Handling
 
@@ -300,21 +304,28 @@ async def generate_sse_chunks(
             if Agent.is_model_request_node(node):
                 async with node.stream(run.ctx) as stream:
                     async for event in stream:
-                        if isinstance(event, PartDeltaEvent):
+                        content = None
+                        # IMPORTANT: Handle PartStartEvent for initial text!
+                        if isinstance(event, PartStartEvent):
+                            if isinstance(event.part, TextPart) and event.part.content:
+                                content = event.part.content
+                        elif isinstance(event, PartDeltaEvent):
                             if isinstance(event.delta, TextPartDelta):
                                 content = event.delta.content_delta
-                                chunk = {
-                                    "id": chat_id,
-                                    "object": "chat.completion.chunk",
-                                    "created": created,
-                                    "model": model,
-                                    "choices": [{
-                                        "index": 0,
-                                        "delta": {"content": content},
-                                        "finish_reason": None,
-                                    }]
-                                }
-                                yield f"data: {json.dumps(chunk)}\n\n"
+
+                        if content:
+                            chunk = {
+                                "id": chat_id,
+                                "object": "chat.completion.chunk",
+                                "created": created,
+                                "model": model,
+                                "choices": [{
+                                    "index": 0,
+                                    "delta": {"content": content},
+                                    "finish_reason": None,
+                                }]
+                            }
+                            yield f"data: {json.dumps(chunk)}\n\n"
 
     # Final chunk: finish_reason
     final_chunk = {
@@ -543,7 +554,7 @@ def convert_to_pydantic_history(
 | **Content parsing** | Accept `string` or `[{type, text}]` |
 | **History conversion** | OpenAI → `ModelRequest`/`ModelResponse` |
 | **Streaming** | `agent.iter()` + `node.stream()` |
-| **Text extraction** | `PartDeltaEvent` → `TextPartDelta.content_delta` |
+| **Text extraction** | `PartStartEvent` → `TextPart.content` (initial) + `PartDeltaEvent` → `TextPartDelta.content_delta` |
 | **Chunk format** | `ChatCompletionChunk` with `delta.content` |
 | **SSE format** | `data: {json}\n\n` + `data: [DONE]\n\n` |
 | **Response type** | `StreamingResponse(media_type="text/event-stream")` |
