@@ -18,7 +18,7 @@
 [ ] Deployment
 ```
 
-**Current Phase:** Tool Implementation In Progress (1 of 3 tools complete)
+**Current Phase:** Tool Implementation In Progress (2 of 3 tools complete)
 
 ---
 
@@ -48,8 +48,8 @@
 | `shared/schemas.py` | ✅ Complete | Pagination, error response schemas |
 | `shared/utils.py` | ✅ Complete | UTC datetime utilities |
 | `shared/vault/` | ✅ Complete | VaultManager package |
-| `shared/vault/manager.py` | ✅ Complete | VaultManager with 7 query operations |
-| `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy |
+| `shared/vault/manager.py` | ✅ Complete | VaultManager with 7 query + 6 CRUD operations |
+| `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy (5 exceptions) |
 | `shared/openai_adapter.py` | Not started | OpenAI format helpers |
 
 ### Features
@@ -63,8 +63,8 @@
 | `features/chat/openai_schemas.py` | - | ✅ Complete | OpenAI request/response models |
 | `features/chat/streaming.py` | - | ✅ Complete | SSE generator using agent.iter() |
 | `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint |
-| Notes | `obsidian_manage_notes` | Not started | 6 operations |
-| Search | `obsidian_query_vault` | ✅ Complete | 7 operations - 51 tests |
+| Notes | `obsidian_manage_notes` | ✅ Complete | 6 operations, bulk support, 33 tests |
+| Search | `obsidian_query_vault` | ✅ Complete | 7 operations, 51 tests |
 | Structure | `obsidian_manage_structure` | Not started | 5 operations |
 
 ### Docker
@@ -79,11 +79,12 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 167 passing | Core, shared, agents, chat, vault, tools |
+| Unit tests | ✅ 201 passing | Core, shared, agents, chat, vault, tools |
 | Integration tests | ⚠️ 6 failing | Require running PostgreSQL |
 | Model tests | ⚠️ 3 errors | Require database connection |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
 | Obsidian Copilot | ✅ Verified | Chat with Jasque via Obsidian works |
+| Manual tests | ✅ Verified | All 6 obsidian_manage_notes operations tested |
 
 ---
 
@@ -131,6 +132,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/plans/implement-base-agent.md` | Base agent plan | ✅ Executed |
 | `.agents/plans/implement-openai-compatible-api.md` | OpenAI API plan | ✅ Executed |
 | `.agents/plans/implement-obsidian-query-vault-tool.md` | First tool plan | ✅ Executed |
+| `.agents/plans/implement-obsidian-manage-notes-tool.md` | Second tool plan | ✅ Executed |
 | `.agents/report/research-report-obsidian-copilot-api-integration.md` | Obsidian Copilot research | Complete |
 | `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
 | `CLAUDE.md` | Project guidelines | Complete |
@@ -140,6 +142,17 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-09 (Session 5): obsidian_manage_notes Tool Implementation
+  - Executed all 18 tasks from implementation plan
+  - Added 2 new exceptions (NoteAlreadyExistsError, TaskNotFoundError)
+  - Implemented 6 VaultManager methods (create, update, append, delete, complete_task, _atomic_write)
+  - Created obsidian_manage_notes tool with bulk support
+  - Added 33 new tests (18 VaultManager + 15 tool)
+  - Manual tested all 6 operations with Obsidian Copilot
+  - Added "File Sync" guidance to SYSTEM_PROMPT for UI refresh issues
+  - All validation green: 201 tests passing
+  - Session log: `_session_logs/2026-01-09-5-obsidian-manage-notes-implementation.md`
 
 - 2026-01-09 (Session 4): obsidian_manage_notes Tool Planning
   - Deep planning session using `/plan-feature` command
@@ -212,50 +225,6 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
   - E2E verified with curl and Obsidian Copilot plugin
   - Session log: `_session_logs/2026-01-07-3-openai-api-implementation.md`
 
-- 2026-01-07 (Session 2): OpenAI API Research & Planning
-  - Researched Obsidian Copilot OpenAI API integration (source code analysis)
-  - Researched Pydantic AI streaming with agent.iter() and SSE
-  - Created implementation plan: `.agents/plans/implement-openai-compatible-api.md`
-  - Created research reports in `.agents/report/`
-  - Plan includes 12 tasks: schemas, streaming, routes, CORS, tests, documentation
-  - Session log: `_session_logs/2026-01-07-2-openai-api-research-planning.md`
-
-- 2026-01-07 (Session 1): Base Agent Implementation
-  - Executed base agent plan from `.agents/plans/implement-base-agent.md`
-  - Created `app/core/agents/` package (types.py, base.py, tests)
-  - Implemented singleton agent with @lru_cache pattern
-  - Created chat feature with `/api/v1/chat/test` endpoint
-  - Added `anthropic_model` config setting (default: claude-sonnet-4-5)
-  - Added root `conftest.py` for project-wide fixtures
-  - Fixed pyproject.toml mypy/pyright config for test files
-  - All 77 unit tests passing, E2E verified with curl
-  - Session log: `_session_logs/2026-01-07-1-base-agent-implementation.md`
-
-- 2026-01-06 (Session 3): Base Agent Planning
-  - Researched Pydantic AI documentation at https://ai.pydantic.dev/
-  - Created comprehensive implementation plan: `.agents/plans/implement-base-agent.md`
-  - Plan covers: Agent types, base factory, chat schemas, test endpoint, fixtures, tests
-  - 14 step-by-step tasks with validation commands
-  - Session log: `_session_logs/2026-01-06-3-base-agent-planning.md`
-
-- 2026-01-06 (Session 2): Module 5.4 - Layer 1 System Integration
-  - Copied core commands: commit, execute, plan-template, prime, prime-tools
-  - Established `.agents/` directory pattern for agent workspace
-  - Organized reference docs in `.agents/reference/`
-  - Session log: `_session_logs/2026-01-06-2-layer1-system-integration.md`
-
-- 2026-01-06 (Session 1): Coherence harmonization
-  - Updated PRD.md, pyproject.toml, config.py, docker-compose.yml
-  - All 66 unit tests passing, type checking green
-
-- 2026-01-05 (Session 1): FastAPI template integration
-  - Integrated FastAPI starter template into project
-  - Session log: `_session_logs/2026-01-05-1-template-integration.md`
-
-- 2026-01-01 (Session 1): Initial planning session
-  - Created PRD.md, mvp-tool-designs.md, CLAUDE.md
-  - Session log: `_session_logs/2026-01-01-1-initial-planning.md`
-
 ---
 
 ## Blockers
@@ -266,7 +235,7 @@ None currently.
 
 ## Next Actions
 
-1. **Manual testing** - Test `obsidian_query_vault` with Obsidian Copilot end-to-end
-2. **Plan `obsidian_manage_notes`** - Note CRUD operations (`/plan-feature`)
-3. **Plan `obsidian_manage_structure`** - Folder management
+1. **Plan `obsidian_manage_structure`** - Folder management (`/plan-feature`)
+2. **Implement `obsidian_manage_structure`** - Third and final MVP tool
+3. **End-to-end testing** - Full workflow with all 3 tools
 4. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)

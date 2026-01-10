@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,8 +16,10 @@ import frontmatter  # type: ignore[import-untyped]
 from app.core.logging import get_logger
 from app.shared.vault.exceptions import (
     FolderNotFoundError,
+    NoteAlreadyExistsError,
     NoteNotFoundError,
     PathTraversalError,
+    TaskNotFoundError,
 )
 
 if TYPE_CHECKING:
@@ -214,6 +217,21 @@ class VaultManager:
         except (UnicodeDecodeError, OSError):
             return None
 
+    async def _atomic_write(self, path: Path, content: str) -> None:
+        """Write content atomically using temp file + replace."""
+        temp_path = path.with_suffix(f".{uuid.uuid4().hex[:8]}.tmp")
+        try:
+            async with aiofiles.open(temp_path, "w", encoding="utf-8") as f:
+                await f.write(content)
+            await aiofiles.os.replace(temp_path, path)
+        except Exception:
+            try:
+                if await aiofiles.os.path.exists(temp_path):
+                    await aiofiles.os.remove(temp_path)
+            except OSError:
+                pass
+            raise
+
     async def list_notes(self, folder: str | None = None) -> list[NoteInfo]:
         """List all notes in the vault or a specific folder.
 
@@ -358,6 +376,203 @@ class VaultManager:
             body = content
 
         return NoteContent(path=path, title=title, content=body, tags=tags, metadata=metadata)
+
+    async def create_note(
+        self,
+        path: str,
+        content: str,
+        folder: str | None = None,
+    ) -> NoteContent:
+        """Create a new note in the vault."""
+        if folder:
+            full_rel_path = f"{folder.rstrip('/')}/{path.lstrip('/')}"
+        else:
+            full_rel_path = path
+
+        if not full_rel_path.endswith(".md"):
+            full_rel_path += ".md"
+
+        full_path = self.validate_path(full_rel_path)
+
+        if await aiofiles.os.path.exists(full_path):
+            raise NoteAlreadyExistsError(
+                f"Note already exists: {full_rel_path}. "
+                "Use operation='update' to modify existing notes."
+            )
+
+        parent = full_path.parent
+        if not await aiofiles.os.path.exists(parent):
+            await aiofiles.os.makedirs(parent, exist_ok=True)
+
+        await self._atomic_write(full_path, content)
+        logger.info("vault.notes.create_completed", path=full_rel_path)
+
+        return await self.read_note(full_rel_path)
+
+    async def update_note(
+        self,
+        path: str,
+        content: str,
+        preserve_frontmatter: bool = True,
+    ) -> NoteContent:
+        """Update an existing note's content."""
+        full_path = self.validate_path(path)
+
+        if not await aiofiles.os.path.exists(full_path):
+            raise NoteNotFoundError(
+                f"Note not found: {path}. "
+                "Use obsidian_query_vault with operation='list_notes' to see available notes."
+            )
+
+        if preserve_frontmatter:
+            existing = await self._read_note_content(full_path)
+            if existing:
+                try:
+                    post = frontmatter.loads(existing)
+                    post.content = content
+                    final_content = frontmatter.dumps(post, sort_keys=False)
+                except Exception:
+                    final_content = content
+            else:
+                final_content = content
+        else:
+            final_content = content
+
+        await self._atomic_write(full_path, final_content)
+        logger.info("vault.notes.update_completed", path=path)
+
+        return await self.read_note(path)
+
+    async def append_note(self, path: str, content: str) -> NoteContent:
+        """Append content to an existing note."""
+        full_path = self.validate_path(path)
+
+        if not await aiofiles.os.path.exists(full_path):
+            raise NoteNotFoundError(
+                f"Note not found: {path}. "
+                "Use obsidian_query_vault with operation='list_notes' to see available notes."
+            )
+
+        existing = await self._read_note_content(full_path)
+        if existing is None:
+            raise NoteNotFoundError(f"Could not read note: {path}")
+
+        if existing and not existing.endswith("\n"):
+            new_content = existing + "\n" + content
+        else:
+            new_content = (existing or "") + content
+
+        await self._atomic_write(full_path, new_content)
+        logger.info("vault.notes.append_completed", path=path)
+
+        return await self.read_note(path)
+
+    async def delete_note(self, path: str) -> None:
+        """Delete a note from the vault."""
+        full_path = self.validate_path(path)
+
+        if not await aiofiles.os.path.exists(full_path):
+            raise NoteNotFoundError(
+                f"Note not found: {path}. "
+                "Use obsidian_query_vault with operation='list_notes' to see available notes."
+            )
+
+        await aiofiles.os.remove(full_path)
+        logger.info("vault.notes.delete_completed", path=path)
+
+    async def complete_task(self, path: str, task_identifier: str) -> TaskInfo:
+        """Mark a task as complete using cascading match: line number -> exact -> substring."""
+        full_path = self.validate_path(path)
+
+        if not await aiofiles.os.path.exists(full_path):
+            raise NoteNotFoundError(
+                f"Note not found: {path}. "
+                "Use obsidian_query_vault with operation='list_notes' to see available notes."
+            )
+
+        content = await self._read_note_content(full_path)
+        if content is None:
+            raise NoteNotFoundError(f"Could not read note: {path}")
+
+        # Find all tasks
+        tasks: list[tuple[re.Match[str], int, str, bool]] = []
+        for match in TASK_PATTERN.finditer(content):
+            checkbox = match.group(2)
+            task_text = match.group(3).strip()
+            line_num = content[: match.start()].count("\n") + 1
+            completed = checkbox.lower() == "x"
+            tasks.append((match, line_num, task_text, completed))
+
+        if not tasks:
+            raise TaskNotFoundError(
+                f"No tasks found in {path}. "
+                "Use obsidian_query_vault with operation='list_tasks' to find notes with tasks."
+            )
+
+        # Find target task
+        target_match: re.Match[str] | None = None
+        target_info: tuple[int, str, bool] | None = None
+
+        # 1. Try line number
+        try:
+            line_num = int(task_identifier)
+            for match, ln, text, completed in tasks:
+                if ln == line_num:
+                    if completed:
+                        raise TaskNotFoundError(
+                            f"Task at line {line_num} is already completed: '{text}'"
+                        )
+                    target_match = match
+                    target_info = (ln, text, completed)
+                    break
+            if target_match is None:
+                task_lines = [str(ln) for _, ln, _, _ in tasks]
+                raise TaskNotFoundError(
+                    f"No task at line {line_num}. Tasks at lines: {', '.join(task_lines)}"
+                )
+        except ValueError:
+            id_lower = task_identifier.lower()
+
+            # 2. Exact match
+            exact = [(m, ln, t, c) for m, ln, t, c in tasks if t.lower() == id_lower and not c]
+            if len(exact) == 1:
+                target_match, ln, text, _ = exact[0]
+                target_info = (ln, text, False)
+            elif len(exact) == 0:
+                # 3. Substring match
+                substr = [(m, ln, t, c) for m, ln, t, c in tasks if id_lower in t.lower() and not c]
+                if len(substr) == 1:
+                    target_match, ln, text, _ = substr[0]
+                    target_info = (ln, text, False)
+                elif len(substr) > 1:
+                    matches_str = ", ".join([f"'{t}' (line {ln})" for _, ln, t, _ in substr])
+                    raise TaskNotFoundError(
+                        f"Multiple tasks match '{task_identifier}': {matches_str}"
+                    ) from None
+                else:
+                    available = ", ".join([f"'{t}'" for _, _, t, c in tasks if not c])
+                    raise TaskNotFoundError(
+                        f"Task not found: '{task_identifier}'. Available: {available or 'none'}"
+                    ) from None
+            else:
+                matches_str = ", ".join([f"'{t}' (line {ln})" for _, ln, t, _ in exact])
+                raise TaskNotFoundError(
+                    f"Multiple tasks match '{task_identifier}': {matches_str}"
+                ) from None
+
+        # Type assertion: all branches above either set target_match/target_info or raise
+        assert target_match is not None
+        assert target_info is not None
+
+        # Replace checkbox
+        line_num, task_text, _ = target_info
+        replacement = f"{target_match.group(1)}- [x] {target_match.group(3)}"
+        new_content = content[: target_match.start()] + replacement + content[target_match.end() :]
+
+        await self._atomic_write(full_path, new_content)
+        logger.info("vault.notes.complete_task_completed", path=path, task=task_text)
+
+        return TaskInfo(path=path, task_text=task_text, completed=True, line_number=line_num)
 
     async def search_text(
         self,

@@ -41,7 +41,8 @@
       "WebFetch(domain:pypi.org)",
       "Bash(uv pip list:*)",
       "WebFetch(domain:python-frontmatter.readthedocs.io)",
-      "Bash(gh search code:*)"
+      "Bash(gh search code:*)",
+      "Bash(python3:*)"
     ]
   }
 }

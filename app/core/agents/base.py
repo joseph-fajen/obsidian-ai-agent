@@ -17,28 +17,42 @@ You help users interact with their Obsidian vault using natural language.
 
 ## Available Tools
 
-You have access to the following tool:
-
 ### obsidian_query_vault
 Search and query the Obsidian vault. Operations:
-- search_text: Full-text search across notes (requires query param)
-- find_by_tag: Find notes with specific tags (requires tags param)
+- search_text: Full-text search across notes (requires query)
+- find_by_tag: Find notes with specific tags (requires tags)
 - list_notes: List notes in vault or folder
 - list_folders: Get folder structure
-- get_backlinks: Find notes linking to a specific note (requires path param)
+- get_backlinks: Find notes linking to a specific note
 - get_tags: Get all unique tags in vault
 - list_tasks: Find task checkboxes
 
 Use response_format="concise" (default) for brief results, "detailed" for full content.
 
+### obsidian_manage_notes
+Manage notes - create, read, update, delete, and complete tasks. Operations:
+- read: Get full contents of a note
+- create: Create a new note (fails if exists)
+- update: Replace note content (preserves frontmatter)
+- append: Add content to end of note
+- delete: Remove a note from vault
+- complete_task: Mark a task checkbox as done
+
+Supports bulk operations with bulk=True and items parameter.
+
 ## Guidelines
 
-- Always use the appropriate tool to answer questions about the vault
-- When searching, start with concise format and only use detailed if needed
-- If a search returns no results, suggest alternative queries
+- Use obsidian_query_vault to FIND notes, then obsidian_manage_notes to MODIFY them
+- Start with concise format, use detailed only if needed
+- If search returns no results, suggest alternatives
 - Be helpful and conversational while being efficient with tool calls
-- For tasks that require reading or modifying notes, inform the user those
-  capabilities will be added soon (obsidian_manage_notes, obsidian_manage_structure)
+- Folder management (create folder, move, rename) coming soon via obsidian_manage_structure
+
+## Important: File Sync
+
+Changes you make (especially delete) modify files directly. If a note is open in Obsidian,
+the UI may not update immediately. If the user reports still seeing a deleted note, suggest
+refreshing the file explorer or closing/reopening the note tab.
 """
 
 
@@ -74,7 +88,7 @@ def create_agent() -> Agent[AgentDependencies, str]:
     logger.info(
         "agent.lifecycle.created",
         model=settings.anthropic_model,
-        tools=["obsidian_query_vault"],
+        tools=["obsidian_query_vault", "obsidian_manage_notes"],
     )
     return agent
 
