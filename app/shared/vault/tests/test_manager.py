@@ -646,3 +646,288 @@ async def test_complete_task_preserves_indentation(tmp_path: Path):
     manager = VaultManager(tmp_path)
     await manager.complete_task("test.md", "Nested task")
     assert "  - [x] Nested task" in (tmp_path / "test.md").read_text()
+
+
+# =============================================================================
+# Create Folder Tests
+# =============================================================================
+
+
+async def test_create_folder_success(tmp_path: Path):
+    """Create folder successfully."""
+    manager = VaultManager(tmp_path)
+    result = await manager.create_folder("new-folder")
+    assert result.path == "new-folder"
+    assert result.name == "new-folder"
+    assert (tmp_path / "new-folder").exists()
+    assert (tmp_path / "new-folder").is_dir()
+
+
+async def test_create_folder_nested(tmp_path: Path):
+    """Create nested folder creates parent directories."""
+    manager = VaultManager(tmp_path)
+    result = await manager.create_folder("projects/alpha/tasks")
+    assert result.path == "projects/alpha/tasks"
+    assert (tmp_path / "projects" / "alpha" / "tasks").exists()
+
+
+async def test_create_folder_already_exists(tmp_path: Path):
+    """Create folder raises error if folder exists."""
+    from app.shared.vault import FolderAlreadyExistsError
+
+    (tmp_path / "existing").mkdir()
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderAlreadyExistsError, match="already exists"):
+        await manager.create_folder("existing")
+
+
+# =============================================================================
+# Rename Tests
+# =============================================================================
+
+
+async def test_rename_folder_success(tmp_path: Path):
+    """Rename folder successfully."""
+    (tmp_path / "old-name").mkdir()
+    manager = VaultManager(tmp_path)
+    result = await manager.rename("old-name", "new-name")
+    assert result.path == "new-name"
+    assert result.name == "new-name"
+    assert not (tmp_path / "old-name").exists()
+    assert (tmp_path / "new-name").exists()
+
+
+async def test_rename_note_success(tmp_path: Path):
+    """Rename note successfully."""
+    (tmp_path / "old.md").write_text("# Old Note")
+    manager = VaultManager(tmp_path)
+    result = await manager.rename("old.md", "new.md")
+    assert result.path == "new.md"
+    assert not (tmp_path / "old.md").exists()
+    assert (tmp_path / "new.md").exists()
+
+
+async def test_rename_folder_not_found(tmp_path: Path):
+    """Rename raises error if folder not found."""
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderNotFoundError):
+        await manager.rename("nonexistent", "new-name")
+
+
+async def test_rename_note_not_found(tmp_path: Path):
+    """Rename raises error if note not found."""
+    manager = VaultManager(tmp_path)
+    with pytest.raises(NoteNotFoundError):
+        await manager.rename("nonexistent.md", "new.md")
+
+
+async def test_rename_destination_folder_exists(tmp_path: Path):
+    """Rename raises error if destination folder exists."""
+    from app.shared.vault import FolderAlreadyExistsError
+
+    (tmp_path / "old").mkdir()
+    (tmp_path / "new").mkdir()
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderAlreadyExistsError):
+        await manager.rename("old", "new")
+
+
+async def test_rename_destination_note_exists(tmp_path: Path):
+    """Rename raises error if destination note exists."""
+    (tmp_path / "old.md").write_text("Old")
+    (tmp_path / "new.md").write_text("New")
+    manager = VaultManager(tmp_path)
+    with pytest.raises(NoteAlreadyExistsError):
+        await manager.rename("old.md", "new.md")
+
+
+# =============================================================================
+# Delete Folder Tests
+# =============================================================================
+
+
+async def test_delete_folder_empty_success(tmp_path: Path):
+    """Delete empty folder successfully."""
+    (tmp_path / "empty").mkdir()
+    manager = VaultManager(tmp_path)
+    await manager.delete_folder("empty")
+    assert not (tmp_path / "empty").exists()
+
+
+async def test_delete_folder_non_empty_requires_force(tmp_path: Path):
+    """Delete non-empty folder requires force=True."""
+    from app.shared.vault import FolderNotEmptyError
+
+    (tmp_path / "non-empty").mkdir()
+    (tmp_path / "non-empty" / "file.md").write_text("Content")
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderNotEmptyError, match="force=True"):
+        await manager.delete_folder("non-empty")
+
+
+async def test_delete_folder_force_recursive(tmp_path: Path):
+    """Delete non-empty folder with force=True deletes recursively."""
+    (tmp_path / "non-empty").mkdir()
+    (tmp_path / "non-empty" / "sub").mkdir()
+    (tmp_path / "non-empty" / "sub" / "file.md").write_text("Content")
+    manager = VaultManager(tmp_path)
+    await manager.delete_folder("non-empty", force=True)
+    assert not (tmp_path / "non-empty").exists()
+
+
+async def test_delete_folder_not_found(tmp_path: Path):
+    """Delete folder raises error if not found."""
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderNotFoundError):
+        await manager.delete_folder("nonexistent")
+
+
+async def test_delete_folder_path_is_file(tmp_path: Path):
+    """Delete folder raises error if path is a file."""
+    (tmp_path / "file.md").write_text("Not a folder")
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderNotFoundError, match="not a folder"):
+        await manager.delete_folder("file.md")
+
+
+# =============================================================================
+# Move Tests
+# =============================================================================
+
+
+async def test_move_note_success(tmp_path: Path):
+    """Move note to new location."""
+    (tmp_path / "source.md").write_text("# Source")
+    (tmp_path / "archive").mkdir()
+    manager = VaultManager(tmp_path)
+    result = await manager.move("source.md", "archive/source.md")
+    assert result.path == "archive/source.md"
+    assert not (tmp_path / "source.md").exists()
+    assert (tmp_path / "archive" / "source.md").exists()
+
+
+async def test_move_folder_success(tmp_path: Path):
+    """Move folder to new location."""
+    (tmp_path / "source").mkdir()
+    (tmp_path / "archive").mkdir()
+    manager = VaultManager(tmp_path)
+    result = await manager.move("source", "archive/source")
+    assert result.path == "archive/source"
+    assert not (tmp_path / "source").exists()
+    assert (tmp_path / "archive" / "source").exists()
+
+
+async def test_move_creates_parent_dirs(tmp_path: Path):
+    """Move creates parent directories if needed."""
+    (tmp_path / "source.md").write_text("Content")
+    manager = VaultManager(tmp_path)
+    await manager.move("source.md", "deep/nested/path/source.md")
+    assert (tmp_path / "deep" / "nested" / "path" / "source.md").exists()
+
+
+async def test_move_note_not_found(tmp_path: Path):
+    """Move raises error if source note not found."""
+    manager = VaultManager(tmp_path)
+    with pytest.raises(NoteNotFoundError):
+        await manager.move("nonexistent.md", "dest.md")
+
+
+async def test_move_folder_not_found(tmp_path: Path):
+    """Move raises error if source folder not found."""
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderNotFoundError):
+        await manager.move("nonexistent", "dest")
+
+
+async def test_move_destination_exists(tmp_path: Path):
+    """Move raises error if destination exists."""
+    from app.shared.vault import NoteAlreadyExistsError
+
+    (tmp_path / "source.md").write_text("Source")
+    (tmp_path / "dest.md").write_text("Dest")
+    manager = VaultManager(tmp_path)
+    with pytest.raises(NoteAlreadyExistsError, match="Destination exists"):
+        await manager.move("source.md", "dest.md")
+
+
+# =============================================================================
+# List Structure Tests
+# =============================================================================
+
+
+async def test_list_structure_root(tmp_path: Path):
+    """List structure from vault root."""
+    (tmp_path / "folder1").mkdir()
+    (tmp_path / "folder2").mkdir()
+    (tmp_path / "note.md").write_text("Note")
+    (tmp_path / ".hidden").mkdir()  # Should be skipped
+
+    manager = VaultManager(tmp_path)
+    result = await manager.list_structure()
+
+    assert len(result) == 3  # 2 folders + 1 note, no hidden
+
+    names = {n.name for n in result}
+    assert "folder1" in names
+    assert "folder2" in names
+    assert "note.md" in names
+    assert ".hidden" not in names
+
+
+async def test_list_structure_nested(tmp_path: Path):
+    """List structure includes nested children."""
+    (tmp_path / "projects").mkdir()
+    (tmp_path / "projects" / "alpha").mkdir()
+    (tmp_path / "projects" / "alpha" / "note.md").write_text("Note")
+
+    manager = VaultManager(tmp_path)
+    result = await manager.list_structure()
+
+    # Find projects folder
+    projects = next(n for n in result if n.name == "projects")
+    assert projects.node_type == "folder"
+    assert projects.children is not None
+
+    # Find alpha subfolder
+    alpha = next(c for c in projects.children if c.name == "alpha")
+    assert alpha.node_type == "folder"
+    assert alpha.children is not None
+
+    # Find note in alpha
+    note = next(c for c in alpha.children if c.name == "note.md")
+    assert note.node_type == "note"
+
+
+async def test_list_structure_specific_path(tmp_path: Path):
+    """List structure from specific path."""
+    (tmp_path / "projects").mkdir()
+    (tmp_path / "projects" / "alpha.md").write_text("Alpha")
+    (tmp_path / "projects" / "beta.md").write_text("Beta")
+
+    manager = VaultManager(tmp_path)
+    result = await manager.list_structure("projects")
+
+    assert len(result) == 2
+    names = {n.name for n in result}
+    assert "alpha.md" in names
+    assert "beta.md" in names
+
+
+async def test_list_structure_skips_hidden(tmp_path: Path):
+    """List structure skips hidden files and folders."""
+    (tmp_path / ".obsidian").mkdir()
+    (tmp_path / ".hidden.md").write_text("Hidden")
+    (tmp_path / "visible.md").write_text("Visible")
+
+    manager = VaultManager(tmp_path)
+    result = await manager.list_structure()
+
+    assert len(result) == 1
+    assert result[0].name == "visible.md"
+
+
+async def test_list_structure_folder_not_found(tmp_path: Path):
+    """List structure raises error if path not found."""
+    manager = VaultManager(tmp_path)
+    with pytest.raises(FolderNotFoundError):
+        await manager.list_structure("nonexistent")

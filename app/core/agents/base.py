@@ -40,13 +40,23 @@ Manage notes - create, read, update, delete, and complete tasks. Operations:
 
 Supports bulk operations with bulk=True and items parameter.
 
+### obsidian_manage_structure
+Manage vault folder structure. Operations:
+- create_folder: Create new folder (creates parents as needed)
+- rename: Rename a file or folder (requires new_path)
+- delete_folder: Delete a folder (use force=True for non-empty)
+- move: Move file/folder to new location (requires new_path)
+- list_structure: Get folder tree hierarchy
+
+Supports bulk operations for move/rename with bulk=True and items parameter.
+
 ## Guidelines
 
 - Use obsidian_query_vault to FIND notes, then obsidian_manage_notes to MODIFY them
+- Use obsidian_manage_structure to organize folders and move/rename files
 - Start with concise format, use detailed only if needed
 - If search returns no results, suggest alternatives
 - Be helpful and conversational while being efficient with tool calls
-- Folder management (create folder, move, rename) coming soon via obsidian_manage_structure
 
 ## Important: File Sync
 
@@ -88,7 +98,7 @@ def create_agent() -> Agent[AgentDependencies, str]:
     logger.info(
         "agent.lifecycle.created",
         model=settings.anthropic_model,
-        tools=["obsidian_query_vault", "obsidian_manage_notes"],
+        tools=["obsidian_query_vault", "obsidian_manage_notes", "obsidian_manage_structure"],
     )
     return agent
 

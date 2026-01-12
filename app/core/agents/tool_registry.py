@@ -6,6 +6,9 @@ from app.core.agents.types import AgentDependencies
 from app.features.obsidian_manage_notes.obsidian_manage_notes_tool import (
     register_obsidian_manage_notes_tool,
 )
+from app.features.obsidian_manage_structure.obsidian_manage_structure_tool import (
+    register_obsidian_manage_structure_tool,
+)
 from app.features.obsidian_query_vault.obsidian_query_vault_tool import (
     register_obsidian_query_vault_tool,
 )
@@ -15,8 +18,8 @@ def create_obsidian_toolset() -> FunctionToolset[AgentDependencies]:
     """Create a FunctionToolset with all Obsidian vault tools.
 
     Returns:
-        FunctionToolset configured with obsidian_query_vault and
-        obsidian_manage_notes tools.
+        FunctionToolset configured with obsidian_query_vault,
+        obsidian_manage_notes, and obsidian_manage_structure tools.
     """
     toolset: FunctionToolset[AgentDependencies] = FunctionToolset()
 
@@ -26,6 +29,7 @@ def create_obsidian_toolset() -> FunctionToolset[AgentDependencies]:
     # Register note management tool
     register_obsidian_manage_notes_tool(toolset)
 
-    # Future: register_obsidian_manage_structure_tool(toolset)
+    # Register structure management tool
+    register_obsidian_manage_structure_tool(toolset)
 
     return toolset

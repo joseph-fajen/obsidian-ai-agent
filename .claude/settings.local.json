@@ -42,7 +42,9 @@
       "Bash(uv pip list:*)",
       "WebFetch(domain:python-frontmatter.readthedocs.io)",
       "Bash(gh search code:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git diff-tree:*)",
+      "Bash(docker-compose up:*)"
     ]
   }
 }

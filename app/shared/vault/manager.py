@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import aiofiles
 import aiofiles.os
@@ -15,6 +15,8 @@ import frontmatter  # type: ignore[import-untyped]
 
 from app.core.logging import get_logger
 from app.shared.vault.exceptions import (
+    FolderAlreadyExistsError,
+    FolderNotEmptyError,
     FolderNotFoundError,
     NoteAlreadyExistsError,
     NoteNotFoundError,
@@ -98,6 +100,16 @@ class NoteContent:
     content: str
     tags: list[str]
     metadata: dict[str, Any]
+
+
+@dataclass
+class FolderNode:
+    """A node in the vault folder tree structure."""
+
+    name: str
+    path: str
+    node_type: Literal["folder", "note"]
+    children: list[FolderNode] | None = None
 
 
 # =============================================================================
@@ -986,3 +998,197 @@ class VaultManager:
                             line_number=line_number,
                         )
                     )
+
+    # =========================================================================
+    # Structure Management Methods
+    # =========================================================================
+
+    async def create_folder(self, path: str) -> FolderInfo:
+        """Create a folder, including any necessary parent folders.
+
+        Args:
+            path: Relative path for the new folder.
+
+        Returns:
+            FolderInfo for the created folder.
+
+        Raises:
+            FolderAlreadyExistsError: If the folder already exists.
+            PathTraversalError: If path attempts to escape vault root.
+        """
+        full_path = self.validate_path(path)
+        if await aiofiles.os.path.exists(full_path):
+            raise FolderAlreadyExistsError(
+                f"Folder already exists: {path}. Use a different path or delete existing folder first."
+            )
+        await aiofiles.os.makedirs(full_path, exist_ok=False)
+        logger.info("vault.structure.folder_created", path=path)
+        return FolderInfo(path=path, name=full_path.name)
+
+    async def rename(self, path: str, new_path: str) -> FolderInfo | NoteContent:
+        """Rename a file or folder.
+
+        Args:
+            path: Current relative path of the item.
+            new_path: New relative path for the item.
+
+        Returns:
+            FolderInfo for folders, NoteContent for notes.
+
+        Raises:
+            NoteNotFoundError: If source note doesn't exist.
+            FolderNotFoundError: If source folder doesn't exist.
+            NoteAlreadyExistsError: If destination note exists.
+            FolderAlreadyExistsError: If destination folder exists.
+        """
+        full_path = self.validate_path(path)
+        full_new_path = self.validate_path(new_path)
+
+        if not await aiofiles.os.path.exists(full_path):
+            if path.endswith(".md"):
+                raise NoteNotFoundError(
+                    f"Note not found: {path}. Use obsidian_query_vault to list notes."
+                )
+            raise FolderNotFoundError(
+                f"Folder not found: {path}. Use list_structure to see folders."
+            )
+
+        if await aiofiles.os.path.exists(full_new_path):
+            if new_path.endswith(".md"):
+                raise NoteAlreadyExistsError(f"Note already exists: {new_path}.")
+            raise FolderAlreadyExistsError(f"Folder already exists: {new_path}.")
+
+        await aiofiles.os.rename(full_path, full_new_path)
+        logger.info("vault.structure.renamed", old_path=path, new_path=new_path)
+
+        if await aiofiles.os.path.isfile(full_new_path):
+            return await self.read_note(new_path)
+        return FolderInfo(path=new_path, name=full_new_path.name)
+
+    async def delete_folder(self, path: str, force: bool = False) -> None:
+        """Delete a folder. Use force=True for non-empty folders.
+
+        Args:
+            path: Relative path of the folder to delete.
+            force: If True, delete even if folder is not empty.
+
+        Raises:
+            FolderNotFoundError: If folder doesn't exist or path is a file.
+            FolderNotEmptyError: If folder is not empty and force=False.
+        """
+        import asyncio
+        import shutil
+
+        full_path = self.validate_path(path)
+
+        if not await aiofiles.os.path.exists(full_path):
+            raise FolderNotFoundError(f"Folder not found: {path}.")
+        if not await aiofiles.os.path.isdir(full_path):
+            raise FolderNotFoundError(
+                f"Path is not a folder: {path}. Use obsidian_manage_notes to delete notes."
+            )
+
+        contents = await aiofiles.os.listdir(full_path)
+        if contents and not force:
+            raise FolderNotEmptyError(
+                f"Folder not empty: {path}. Use force=True or empty folder first."
+            )
+
+        if force and contents:
+            await asyncio.to_thread(shutil.rmtree, full_path)
+        else:
+            await aiofiles.os.rmdir(full_path)
+
+        logger.info("vault.structure.folder_deleted", path=path, force=force)
+
+    async def move(self, path: str, new_path: str) -> FolderInfo | NoteContent:
+        """Move a file or folder to a new location. Creates parent dirs if needed.
+
+        Args:
+            path: Current relative path of the item.
+            new_path: Destination relative path.
+
+        Returns:
+            FolderInfo for folders, NoteContent for notes.
+
+        Raises:
+            NoteNotFoundError: If source note doesn't exist.
+            FolderNotFoundError: If source folder doesn't exist.
+            NoteAlreadyExistsError: If destination note exists.
+            FolderAlreadyExistsError: If destination folder exists.
+        """
+        full_path = self.validate_path(path)
+        full_new_path = self.validate_path(new_path)
+
+        if not await aiofiles.os.path.exists(full_path):
+            if path.endswith(".md"):
+                raise NoteNotFoundError(f"Note not found: {path}.")
+            raise FolderNotFoundError(f"Folder not found: {path}.")
+
+        if await aiofiles.os.path.exists(full_new_path):
+            if new_path.endswith(".md"):
+                raise NoteAlreadyExistsError(f"Destination exists: {new_path}.")
+            raise FolderAlreadyExistsError(f"Destination exists: {new_path}.")
+
+        parent = full_new_path.parent
+        if not await aiofiles.os.path.exists(parent):
+            await aiofiles.os.makedirs(parent, exist_ok=True)
+
+        await aiofiles.os.rename(full_path, full_new_path)
+        logger.info("vault.structure.moved", old_path=path, new_path=new_path)
+
+        if await aiofiles.os.path.isfile(full_new_path):
+            return await self.read_note(new_path)
+        return FolderInfo(path=new_path, name=full_new_path.name)
+
+    async def list_structure(self, path: str | None = None) -> list[FolderNode]:
+        """Get hierarchical folder/file tree structure.
+
+        Args:
+            path: Optional folder to scope the listing.
+
+        Returns:
+            List of FolderNode objects representing the tree structure.
+
+        Raises:
+            FolderNotFoundError: If the specified path doesn't exist.
+        """
+        if path:
+            full_path = self.validate_path(path)
+            if not await aiofiles.os.path.exists(full_path):
+                raise FolderNotFoundError(f"Folder not found: {path}.")
+        else:
+            full_path = self.vault_path
+        return await self._build_structure_tree(full_path, path or "")
+
+    async def _build_structure_tree(self, full_path: Path, rel_path: str) -> list[FolderNode]:
+        """Recursively build folder tree structure.
+
+        Args:
+            full_path: Absolute path to scan.
+            rel_path: Relative path for the current directory.
+
+        Returns:
+            List of FolderNode objects for children.
+        """
+        nodes: list[FolderNode] = []
+        try:
+            entries = await aiofiles.os.listdir(full_path)
+        except OSError:
+            return nodes
+
+        for name in sorted(entries):
+            if self._is_hidden(name):
+                continue
+            entry_path = full_path / name
+            entry_rel = f"{rel_path}/{name}".lstrip("/")
+            is_dir = await aiofiles.os.path.isdir(entry_path)
+
+            if is_dir:
+                children = await self._build_structure_tree(entry_path, entry_rel)
+                nodes.append(
+                    FolderNode(name=name, path=entry_rel, node_type="folder", children=children)
+                )
+            elif name.endswith(".md"):
+                nodes.append(FolderNode(name=name, path=entry_rel, node_type="note", children=None))
+        return nodes

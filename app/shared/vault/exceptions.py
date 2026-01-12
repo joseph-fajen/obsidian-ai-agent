@@ -35,3 +35,15 @@ class TaskNotFoundError(VaultError):
     """Exception raised when a task cannot be found."""
 
     pass
+
+
+class FolderAlreadyExistsError(VaultError):
+    """Folder already exists at the specified path."""
+
+    pass
+
+
+class FolderNotEmptyError(VaultError):
+    """Folder is not empty and force=False."""
+
+    pass
