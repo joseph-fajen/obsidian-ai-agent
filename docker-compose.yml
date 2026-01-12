@@ -42,6 +42,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       # Override DATABASE_URL for Docker networking (app -> db service)
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/obsidian_db
+      # Override vault path for container (host path is used for volume mount, container uses /vault)
+      - OBSIDIAN_VAULT_PATH=/vault
 
     # Wait for database to be healthy before starting app
     depends_on:
