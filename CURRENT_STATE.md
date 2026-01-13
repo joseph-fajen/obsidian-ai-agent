@@ -145,6 +145,14 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 ## Recent Changes
 
+- 2026-01-13 (Session 2): Gemini 2.5 Pro LLM Testing
+  - Pushed 6 commits to origin/main (ca652ee..e7ede85)
+  - Updated `.env` with LLM_MODEL variable and multi-provider API key structure
+  - Configured and tested Gemini 2.5 Pro as LLM provider
+  - Resolved Google Cloud setup: enabled Generative Language API, enabled billing
+  - Successfully tested Jasque with Gemini via Obsidian Copilot
+  - Session log: `_session_logs/2026-01-13-2-gemini-llm-testing.md`
+
 - 2026-01-13 (Session 1): Code Review Command and LLM Provider Refactor
   - Ran `/code-review --last-commit` on multi-LLM provider commit
   - Refactored: Moved env var setup to dedicated `configure_llm_provider()` function
@@ -257,8 +265,7 @@ None currently.
 
 ## Next Actions
 
-1. **Push commits to origin** - 6 unpushed commits on main
-2. **Integration testing** - Full workflow with all 3 tools in real scenarios
-3. **Documentation** - User guide, API docs
-4. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
-5. **Review PRD** - Identify Phase 2 enhancements
+1. **Integration testing** - Full workflow with all 3 tools in real scenarios
+2. **Documentation** - User guide, API docs
+3. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
+4. **Review PRD** - Identify Phase 2 enhancements
