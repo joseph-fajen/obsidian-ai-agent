@@ -572,9 +572,9 @@ class VaultManager:
                     f"Multiple tasks match '{task_identifier}': {matches_str}"
                 ) from None
 
-        # Type assertion: all branches above either set target_match/target_info or raise
-        assert target_match is not None
-        assert target_info is not None
+        # Type narrowing: all branches above either set target_match/target_info or raise
+        assert target_match is not None  # noqa: S101
+        assert target_info is not None  # noqa: S101
 
         # Replace checkbox
         line_num, task_text, _ = target_info
