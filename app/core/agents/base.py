@@ -6,10 +6,65 @@ from functools import lru_cache
 from pydantic_ai import Agent
 
 from app.core.agents.types import AgentDependencies
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+def _get_provider_from_model(model: str) -> str:
+    """Extract provider prefix from model string.
+
+    Args:
+        model: Model string in format 'provider:model-name'
+            (e.g., 'anthropic:claude-sonnet-4-5', 'google-gla:gemini-2.5-pro')
+
+    Returns:
+        The provider prefix (e.g., 'anthropic', 'google-gla')
+
+    Raises:
+        ValueError: If model string doesn't contain a colon separator.
+    """
+    if ":" not in model:
+        raise ValueError(
+            f"Invalid model format: '{model}'. Expected 'provider:model-name' "
+            "(e.g., 'anthropic:claude-sonnet-4-5', 'google-gla:gemini-2.5-pro')"
+        )
+    return model.split(":")[0]
+
+
+def _get_api_key_for_provider(provider: str, settings: Settings) -> tuple[str, str]:
+    """Get API key environment variable name and value for provider.
+
+    Args:
+        provider: Provider prefix (e.g., 'anthropic', 'google-gla', 'openai')
+        settings: Application settings containing API keys
+
+    Returns:
+        Tuple of (env_var_name, api_key_value)
+
+    Raises:
+        ValueError: If provider is not supported or API key not configured.
+    """
+    provider_key_map: dict[str, tuple[str, str | None]] = {
+        "anthropic": ("ANTHROPIC_API_KEY", settings.anthropic_api_key),
+        "google-gla": ("GOOGLE_API_KEY", settings.google_api_key),
+        "google-vertex": ("GOOGLE_API_KEY", settings.google_api_key),
+        "openai": ("OPENAI_API_KEY", settings.openai_api_key),
+    }
+
+    if provider not in provider_key_map:
+        supported = ", ".join(sorted(provider_key_map.keys()))
+        raise ValueError(f"Unsupported provider: '{provider}'. Supported providers: {supported}")
+
+    env_var, api_key = provider_key_map[provider]
+    if not api_key:
+        raise ValueError(
+            f"API key not configured for provider '{provider}'. Set {env_var} in your .env file."
+        )
+
+    return env_var, api_key
+
 
 SYSTEM_PROMPT = """You are Jasque, an AI assistant for Obsidian vault management.
 
@@ -71,15 +126,21 @@ def create_agent() -> Agent[AgentDependencies, str]:
 
     Returns:
         A configured Pydantic AI Agent with AgentDependencies and string output.
+
+    Raises:
+        ValueError: If model format is invalid or API key not configured.
     """
     settings = get_settings()
 
+    # Parse and validate model configuration
+    provider = _get_provider_from_model(settings.llm_model)
+    env_var, api_key = _get_api_key_for_provider(provider, settings)
+
     # Set API key in environment for Pydantic AI to use
     # (pydantic-settings loads from .env but doesn't export to os.environ)
-    os.environ["ANTHROPIC_API_KEY"] = settings.anthropic_api_key
+    os.environ[env_var] = api_key
 
-    model_name = f"anthropic:{settings.anthropic_model}"
-    logger.info("agent.lifecycle.creating", model=settings.anthropic_model)
+    logger.info("agent.lifecycle.creating", model=settings.llm_model, provider=provider)
 
     # Create toolset with registered tools
     # Import here to avoid circular import
@@ -88,7 +149,7 @@ def create_agent() -> Agent[AgentDependencies, str]:
     toolset = create_obsidian_toolset()
 
     agent: Agent[AgentDependencies, str] = Agent(
-        model_name,
+        settings.llm_model,
         deps_type=AgentDependencies,
         output_type=str,
         instructions=SYSTEM_PROMPT,
@@ -97,7 +158,8 @@ def create_agent() -> Agent[AgentDependencies, str]:
 
     logger.info(
         "agent.lifecycle.created",
-        model=settings.anthropic_model,
+        model=settings.llm_model,
+        provider=provider,
         tools=["obsidian_query_vault", "obsidian_manage_notes", "obsidian_manage_structure"],
     )
     return agent

@@ -5,8 +5,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.core.agents.base import SYSTEM_PROMPT, create_agent, get_agent
+from app.core.agents.base import (
+    SYSTEM_PROMPT,
+    _get_api_key_for_provider,
+    _get_provider_from_model,
+    create_agent,
+    get_agent,
+)
 from app.core.agents.types import AgentDependencies
+from app.core.config import get_settings
 
 
 @pytest.fixture(autouse=True)
@@ -15,7 +22,7 @@ def mock_environment():
     env_vars = {
         "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
         "ANTHROPIC_API_KEY": "sk-ant-test-key",
-        "ANTHROPIC_MODEL": "claude-sonnet-4-5",
+        "LLM_MODEL": "anthropic:claude-sonnet-4-5",
     }
     with patch.dict(os.environ, env_vars):
         from app.core.agents.base import get_agent
@@ -74,3 +81,106 @@ def test_agent_dependencies_dataclass():
     assert deps.request_id == ""
     deps_with_id = AgentDependencies(request_id="test-123")
     assert deps_with_id.request_id == "test-123"
+
+
+# Tests for _get_provider_from_model helper
+
+
+def test_get_provider_from_model_anthropic():
+    """Test extracting anthropic provider."""
+    assert _get_provider_from_model("anthropic:claude-sonnet-4-5") == "anthropic"
+
+
+def test_get_provider_from_model_google():
+    """Test extracting google-gla provider."""
+    assert _get_provider_from_model("google-gla:gemini-2.5-pro") == "google-gla"
+
+
+def test_get_provider_from_model_openai():
+    """Test extracting openai provider."""
+    assert _get_provider_from_model("openai:gpt-4o") == "openai"
+
+
+def test_get_provider_from_model_invalid_format():
+    """Test that invalid model format raises clear error."""
+    with pytest.raises(ValueError, match="Invalid model format"):
+        _get_provider_from_model("invalid-no-colon")
+
+
+def test_get_provider_from_model_empty_string():
+    """Test that empty string raises clear error."""
+    with pytest.raises(ValueError, match="Invalid model format"):
+        _get_provider_from_model("")
+
+
+# Tests for _get_api_key_for_provider helper
+
+
+def test_get_api_key_for_provider_anthropic():
+    """Test getting API key for anthropic provider."""
+    settings = get_settings()
+    env_var, api_key = _get_api_key_for_provider("anthropic", settings)
+    assert env_var == "ANTHROPIC_API_KEY"
+    assert api_key == "sk-ant-test-key"
+
+
+def test_get_api_key_for_provider_unsupported():
+    """Test that unsupported provider raises clear error."""
+    settings = get_settings()
+    with pytest.raises(ValueError, match="Unsupported provider: 'unsupported'"):
+        _get_api_key_for_provider("unsupported", settings)
+
+
+def test_get_api_key_for_provider_missing_key():
+    """Test that missing API key raises clear error."""
+    env_vars = {
+        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+        "LLM_MODEL": "google-gla:gemini-2.5-pro",
+        # Note: GOOGLE_API_KEY not set
+    }
+    with patch.dict(os.environ, env_vars, clear=True):
+        get_settings.cache_clear()
+        settings = get_settings()
+        with pytest.raises(ValueError, match="API key not configured for provider 'google-gla'"):
+            _get_api_key_for_provider("google-gla", settings)
+
+
+# Tests for create_agent with multiple providers
+
+
+def test_create_agent_invalid_model_format():
+    """Test that invalid model format raises clear error."""
+    env_vars = {
+        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+        "LLM_MODEL": "invalid-no-colon",
+        "ANTHROPIC_API_KEY": "sk-ant-test-key",
+    }
+    with patch.dict(os.environ, env_vars, clear=True):
+        get_settings.cache_clear()
+        with pytest.raises(ValueError, match="Invalid model format"):
+            create_agent()
+
+
+def test_create_agent_missing_api_key():
+    """Test that missing API key raises clear error."""
+    env_vars = {
+        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+        "LLM_MODEL": "google-gla:gemini-2.5-pro",
+        # Note: GOOGLE_API_KEY not set
+    }
+    with patch.dict(os.environ, env_vars, clear=True):
+        get_settings.cache_clear()
+        with pytest.raises(ValueError, match="API key not configured"):
+            create_agent()
+
+
+def test_create_agent_unsupported_provider():
+    """Test that unsupported provider raises clear error."""
+    env_vars = {
+        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+        "LLM_MODEL": "unsupported:some-model",
+    }
+    with patch.dict(os.environ, env_vars, clear=True):
+        get_settings.cache_clear()
+        with pytest.raises(ValueError, match="Unsupported provider"):
+            create_agent()

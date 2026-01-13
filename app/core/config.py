@@ -41,9 +41,14 @@ class Settings(BaseSettings):
     # Obsidian Vault (mounted at /vault in container)
     obsidian_vault_path: str = "/vault"
 
-    # LLM Provider
-    anthropic_api_key: str
-    anthropic_model: str = "claude-sonnet-4-5"
+    # LLM Provider - unified model setting with format: provider:model-name
+    # Supported providers: anthropic, google-gla, google-vertex, openai
+    llm_model: str = "anthropic:claude-sonnet-4-5"
+
+    # API keys - set the key(s) for provider(s) you want to use
+    anthropic_api_key: str | None = None
+    google_api_key: str | None = None
+    openai_api_key: str | None = None
 
     # CORS settings (app://obsidian.md is the Electron app origin for Obsidian Copilot)
     allowed_origins: list[str] = [
