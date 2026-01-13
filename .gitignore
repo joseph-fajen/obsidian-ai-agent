@@ -20,5 +20,6 @@ htmlcov/
 .ruff_cache/
 
 .agents/external-docs
+.agents/code-reviews
 guide.md
 .agents/reports
