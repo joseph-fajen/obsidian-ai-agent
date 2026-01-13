@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-12
+**Last Updated:** 2026-01-13
 
 ---
 
@@ -29,14 +29,14 @@
 | Component | Status | Notes |
 |-----------|--------|-------|
 | `main.py` | ✅ Complete | FastAPI entry point with health routes + chat router |
-| `core/config.py` | ✅ Complete | pydantic-settings + anthropic_model setting |
+| `core/config.py` | ✅ Complete | pydantic-settings + LLM_MODEL (multi-provider) |
 | `core/database.py` | ✅ Complete | Async SQLAlchemy setup |
 | `core/logging.py` | ✅ Complete | Structlog JSON logging |
 | `core/middleware.py` | ✅ Complete | Request ID, CORS middleware |
 | `core/health.py` | ✅ Complete | Health check endpoints |
 | `core/exceptions.py` | ✅ Complete | Exception handlers |
 | `core/agents/` | ✅ Complete | Pydantic AI agent package |
-| `core/agents/base.py` | ✅ Complete | create_agent() + get_agent() singleton |
+| `core/agents/base.py` | ✅ Complete | configure_llm_provider() + create_agent() + get_agent() singleton |
 | `core/agents/types.py` | ✅ Complete | AgentDependencies, TokenUsage |
 | `core/dependencies.py` | Not started | VaultDependencies |
 
@@ -79,7 +79,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 251 passing | Core, shared, agents, chat, vault, tools |
+| Unit tests | ✅ 263 passing | Core, shared, agents, chat, vault, tools |
 | Integration tests | ⚠️ 6 failing | Require running PostgreSQL |
 | Model tests | ⚠️ 3 errors | Require database connection |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
@@ -108,8 +108,9 @@
 # Configured in .env and .env.example
 APP_NAME=Jasque
 OBSIDIAN_VAULT_PATH=/path/to/vault  # Host path, mounted to /vault in container
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-sonnet-4-5   # Default model
+LLM_MODEL=anthropic:claude-sonnet-4-5  # Format: provider:model-name
+# Supported providers: anthropic, google-gla, google-vertex, openai
+ANTHROPIC_API_KEY=sk-ant-...  # Set key for your chosen provider
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ```
 
@@ -143,6 +144,15 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-13 (Session 1): Code Review Command and LLM Provider Refactor
+  - Ran `/code-review --last-commit` on multi-LLM provider commit
+  - Refactored: Moved env var setup to dedicated `configure_llm_provider()` function
+  - Committed `/code-review` slash command (3 modes: uncommitted, last-commit, unpushed)
+  - Compared command against agentic-coding-course module 7 reference
+  - Added `.agents/code-reviews` to `.gitignore`
+  - All validation green: 263 tests passing
+  - Session log: `_session_logs/2026-01-13-1-code-review-and-refactor.md`
 
 - 2026-01-12 (Session 1): obsidian_manage_structure Tool Implementation - MVP Complete
   - Implemented third and final MVP tool with 5 operations
@@ -247,7 +257,7 @@ None currently.
 
 ## Next Actions
 
-1. **Push commits to origin** - 3 unpushed commits on main
+1. **Push commits to origin** - 6 unpushed commits on main
 2. **Integration testing** - Full workflow with all 3 tools in real scenarios
 3. **Documentation** - User guide, API docs
 4. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
