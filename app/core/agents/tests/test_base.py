@@ -9,6 +9,7 @@ from app.core.agents.base import (
     SYSTEM_PROMPT,
     _get_api_key_for_provider,
     _get_provider_from_model,
+    configure_llm_provider,
     create_agent,
     get_agent,
 )
@@ -145,10 +146,23 @@ def test_get_api_key_for_provider_missing_key():
             _get_api_key_for_provider("google-gla", settings)
 
 
-# Tests for create_agent with multiple providers
+# Tests for configure_llm_provider
 
 
-def test_create_agent_invalid_model_format():
+def test_configure_llm_provider_sets_env_var():
+    """Test that configure_llm_provider sets the API key in os.environ."""
+    env_vars = {
+        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+        "LLM_MODEL": "anthropic:claude-sonnet-4-5",
+        "ANTHROPIC_API_KEY": "sk-ant-test-key",
+    }
+    with patch.dict(os.environ, env_vars, clear=True):
+        get_settings.cache_clear()
+        configure_llm_provider()
+        assert os.environ.get("ANTHROPIC_API_KEY") == "sk-ant-test-key"
+
+
+def test_configure_llm_provider_invalid_model_format():
     """Test that invalid model format raises clear error."""
     env_vars = {
         "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
@@ -158,10 +172,10 @@ def test_create_agent_invalid_model_format():
     with patch.dict(os.environ, env_vars, clear=True):
         get_settings.cache_clear()
         with pytest.raises(ValueError, match="Invalid model format"):
-            create_agent()
+            configure_llm_provider()
 
 
-def test_create_agent_missing_api_key():
+def test_configure_llm_provider_missing_api_key():
     """Test that missing API key raises clear error."""
     env_vars = {
         "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
@@ -171,10 +185,10 @@ def test_create_agent_missing_api_key():
     with patch.dict(os.environ, env_vars, clear=True):
         get_settings.cache_clear()
         with pytest.raises(ValueError, match="API key not configured"):
-            create_agent()
+            configure_llm_provider()
 
 
-def test_create_agent_unsupported_provider():
+def test_configure_llm_provider_unsupported_provider():
     """Test that unsupported provider raises clear error."""
     env_vars = {
         "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
@@ -183,4 +197,4 @@ def test_create_agent_unsupported_provider():
     with patch.dict(os.environ, env_vars, clear=True):
         get_settings.cache_clear()
         with pytest.raises(ValueError, match="Unsupported provider"):
-            create_agent()
+            configure_llm_provider()

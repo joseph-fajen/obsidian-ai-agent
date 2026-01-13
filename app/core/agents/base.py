@@ -66,6 +66,32 @@ def _get_api_key_for_provider(provider: str, settings: Settings) -> tuple[str, s
     return env_var, api_key
 
 
+def configure_llm_provider() -> None:
+    """Configure the LLM provider by validating settings and setting up environment.
+
+    This function should be called once at application startup. It:
+    1. Validates the LLM_MODEL format (provider:model-name)
+    2. Validates the required API key is configured
+    3. Sets the API key in os.environ for Pydantic AI to use
+
+    Raises:
+        ValueError: If model format is invalid or API key not configured.
+    """
+    settings = get_settings()
+    provider = _get_provider_from_model(settings.llm_model)
+    env_var, api_key = _get_api_key_for_provider(provider, settings)
+
+    # Set API key in environment for Pydantic AI to use
+    # (pydantic-settings loads from .env but doesn't export to os.environ)
+    os.environ[env_var] = api_key
+
+    logger.info(
+        "llm.provider.configured",
+        model=settings.llm_model,
+        provider=provider,
+    )
+
+
 SYSTEM_PROMPT = """You are Jasque, an AI assistant for Obsidian vault management.
 
 You help users interact with their Obsidian vault using natural language.
@@ -124,23 +150,15 @@ refreshing the file explorer or closing/reopening the note tab.
 def create_agent() -> Agent[AgentDependencies, str]:
     """Create a new Pydantic AI agent instance with tools.
 
+    Note: configure_llm_provider() must be called before this function
+    to set up the API key in os.environ.
+
     Returns:
         A configured Pydantic AI Agent with AgentDependencies and string output.
-
-    Raises:
-        ValueError: If model format is invalid or API key not configured.
     """
     settings = get_settings()
 
-    # Parse and validate model configuration
-    provider = _get_provider_from_model(settings.llm_model)
-    env_var, api_key = _get_api_key_for_provider(provider, settings)
-
-    # Set API key in environment for Pydantic AI to use
-    # (pydantic-settings loads from .env but doesn't export to os.environ)
-    os.environ[env_var] = api_key
-
-    logger.info("agent.lifecycle.creating", model=settings.llm_model, provider=provider)
+    logger.info("agent.lifecycle.creating", model=settings.llm_model)
 
     # Create toolset with registered tools
     # Import here to avoid circular import
@@ -159,7 +177,6 @@ def create_agent() -> Agent[AgentDependencies, str]:
     logger.info(
         "agent.lifecycle.created",
         model=settings.llm_model,
-        provider=provider,
         tools=["obsidian_query_vault", "obsidian_manage_notes", "obsidian_manage_structure"],
     )
     return agent

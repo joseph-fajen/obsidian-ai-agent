@@ -2,13 +2,13 @@
 
 from typing import TYPE_CHECKING
 
-from app.core.agents.base import create_agent, get_agent
+from app.core.agents.base import configure_llm_provider, create_agent, get_agent
 from app.core.agents.types import AgentDependencies
 
 if TYPE_CHECKING:
     from pydantic_ai import FunctionToolset
 
-__all__ = ["AgentDependencies", "create_agent", "get_agent"]
+__all__ = ["AgentDependencies", "configure_llm_provider", "create_agent", "get_agent"]
 
 
 def create_obsidian_toolset() -> "FunctionToolset[AgentDependencies]":

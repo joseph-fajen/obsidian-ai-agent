@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from app.core.agents import get_agent
+from app.core.agents import configure_llm_provider, get_agent
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
@@ -54,6 +54,9 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         environment=settings.environment,
     )
     logger.info("database.connection_initialized")
+
+    # Configure LLM provider (validates settings and sets API key in environment)
+    configure_llm_provider()
 
     # Initialize agent singleton
     get_agent()
