@@ -23,6 +23,20 @@ FastAPI + PostgreSQL application using **vertical slice architecture**, optimize
 - Container vault path: `/vault` (fixed mount point)
 - Mount mode: `:rw` (bidirectional sync)
 
+**Environment Override Pattern:** When `env_file: .env` loads host-specific paths into the container, override them in the `environment` section:
+
+```yaml
+services:
+  app:
+    env_file: .env  # Loads all vars including host paths
+    environment:
+      - OBSIDIAN_VAULT_PATH=/vault  # Override for container context
+```
+
+This allows `.env` to define the host path for volume mounting while the container receives the correct internal path.
+
+**Port Binding Note:** Docker binds to `*:PORT` (all interfaces) while local uvicorn binds to `localhost:PORT` (IPv4). If both run simultaneously, clients may hit the wrong server. Verify single listener: `lsof -i :8123`
+
 ---
 
 ## Core Documents
