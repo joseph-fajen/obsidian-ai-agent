@@ -45,7 +45,11 @@
       "Bash(python3:*)",
       "Bash(git diff-tree:*)",
       "Bash(docker-compose up:*)",
-      "Bash(docker-compose down:*)"
+      "Bash(docker-compose down:*)",
+      "Skill(start-session)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)",
+      "Bash(git show:*)"
     ]
   }
 }

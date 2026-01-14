@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-13
+**Last Updated:** 2026-01-14
 
 ---
 
@@ -139,11 +139,32 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
 | `CLAUDE.md` | Project guidelines | Complete |
 | `README.md` | Project overview | Updated for Jasque |
+| `docs/about-jasque.md` | Conceptual overview | Complete |
+| `docs/architecture-layers.md` | Technical deep-dive | Complete |
 | `_session_logs/` | Session history | Active |
 
 ---
 
 ## Recent Changes
+
+- 2026-01-14 (Session 1): Documentation Deep-Dive
+  - Conducted tutored walkthrough of all infrastructure layers
+  - Clarified Jasque value proposition (retrieval vs. agency)
+  - Explained Docker's role in packaging and sandboxing
+  - Created `docs/about-jasque.md` - conceptual overview and value proposition
+  - Created `docs/architecture-layers.md` - technical deep-dive with Docker section
+  - Added `/create-prompt` command from upstream course materials
+  - Session log: `_session_logs/2026-01-14-1-documentation-deep-dive.md`
+
+- 2026-01-13 (Session 3): Module 7 System Review Exercise
+  - Completed tutored walkthrough of system review concepts
+  - Created `/validation/execution-report` and `/validation/system-review` commands
+  - Ran system review on obsidian_manage_structure implementation (9/10 alignment)
+  - Updated CLAUDE.md with Docker environment override pattern
+  - Reorganized commands into subdirectories: session/, piv_loop/, validation/
+  - Removed plan-template.md (superseded by plan-feature.md)
+  - Commit: `e7fab36`
+  - Session log: `_session_logs/2026-01-13-3-system-review-exercise.md`
 
 - 2026-01-13 (Session 2): Gemini 2.5 Pro LLM Testing
   - Pushed 6 commits to origin/main (ca652ee..e7ede85)
