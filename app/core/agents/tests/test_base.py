@@ -134,16 +134,12 @@ def test_get_api_key_for_provider_unsupported():
 
 def test_get_api_key_for_provider_missing_key():
     """Test that missing API key raises clear error."""
-    env_vars = {
-        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
-        "LLM_MODEL": "google-gla:gemini-2.5-pro",
-        # Note: GOOGLE_API_KEY not set
-    }
-    with patch.dict(os.environ, env_vars, clear=True):
-        get_settings.cache_clear()
-        settings = get_settings()
-        with pytest.raises(ValueError, match="API key not configured for provider 'google-gla'"):
-            _get_api_key_for_provider("google-gla", settings)
+    # Create a mock Settings with google_api_key=None
+    # (patching os.environ doesn't work because pydantic-settings reads from .env file)
+    mock_settings = MagicMock()
+    mock_settings.google_api_key = None
+    with pytest.raises(ValueError, match="API key not configured for provider 'google-gla'"):
+        _get_api_key_for_provider("google-gla", mock_settings)
 
 
 # Tests for configure_llm_provider
@@ -177,13 +173,12 @@ def test_configure_llm_provider_invalid_model_format():
 
 def test_configure_llm_provider_missing_api_key():
     """Test that missing API key raises clear error."""
-    env_vars = {
-        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
-        "LLM_MODEL": "google-gla:gemini-2.5-pro",
-        # Note: GOOGLE_API_KEY not set
-    }
-    with patch.dict(os.environ, env_vars, clear=True):
-        get_settings.cache_clear()
+    # Create a mock Settings with google_api_key=None
+    # (patching os.environ doesn't work because pydantic-settings reads from .env file)
+    mock_settings = MagicMock()
+    mock_settings.llm_model = "google-gla:gemini-2.5-pro"
+    mock_settings.google_api_key = None
+    with patch("app.core.agents.base.get_settings", return_value=mock_settings):
         with pytest.raises(ValueError, match="API key not configured"):
             configure_llm_provider()
 
