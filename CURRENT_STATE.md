@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-16
 
 ---
 
@@ -145,11 +145,19 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `README.md` | Project overview | Updated for Jasque |
 | `docs/about-jasque.md` | Conceptual overview | Complete |
 | `docs/architecture-layers.md` | Technical deep-dive | Complete |
+| `docs/jasque-preferences-guide.md` | User guide for preferences | Complete |
 | `_session_logs/` | Session history | Active |
 
 ---
 
 ## Recent Changes
+
+- 2026-01-16 (Session 1): Preferences Guide and Customization
+  - Deep exploration of `_jasque/preferences` feature capabilities
+  - Created comprehensive user guide: `docs/jasque-preferences-guide.md`
+  - Built personalized preferences file through guided interview
+  - Key insight: tagging section as collaborative refinement (not fixed system)
+  - Session log: `_session_logs/2026-01-16-1-preferences-guide-and-customization.md`
 
 - 2026-01-15 (Session 3): Implement Vault-Based Preferences (Memory Phase 1)
   - Executed 7-task implementation plan from `.agents/plans/implement-vault-preferences-phase1.md`
