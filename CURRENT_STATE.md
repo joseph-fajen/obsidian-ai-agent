@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-15
 
 ---
 
@@ -13,12 +13,12 @@
 [x] Core Infrastructure (Base Agent)
 [x] API Implementation (OpenAI-compatible)
 [x] Tool Implementation
-[ ] Integration Testing
+[x] Integration Testing
 [ ] Documentation
 [ ] Deployment
 ```
 
-**Current Phase:** MVP Complete - All 3 tools implemented and tested
+**Current Phase:** MVP Complete + Validated - All 3 tools tested with integration workflows
 
 ---
 
@@ -79,9 +79,9 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 263 passing | Core, shared, agents, chat, vault, tools |
-| Integration tests | ⚠️ 6 failing | Require running PostgreSQL |
-| Model tests | ⚠️ 3 errors | Require database connection |
+| Unit tests | ✅ 273 passing | Core, shared, agents, chat, vault, tools |
+| Integration tests | ✅ 10 passing | Multi-tool workflow tests |
+| Database tests | ✅ 6 passing | Require running PostgreSQL |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
 | Obsidian Copilot | ✅ Verified | Chat with Jasque via Obsidian works |
 | Manual tests | ✅ Verified | All 3 tools tested (query, notes, structure) |
@@ -137,6 +137,8 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/plans/implement-obsidian-manage-structure-tool.md` | Third tool plan | ✅ Executed |
 | `.agents/report/research-report-obsidian-copilot-api-integration.md` | Obsidian Copilot research | Complete |
 | `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
+| `.agents/report/research-report-conversation-memory.md` | Memory patterns research | Complete |
+| `.agents/reference/memory-implementation-guide.md` | Phased memory implementation | Ready (Phase 1) |
 | `CLAUDE.md` | Project guidelines | Complete |
 | `README.md` | Project overview | Updated for Jasque |
 | `docs/about-jasque.md` | Conceptual overview | Complete |
@@ -146,6 +148,24 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-15 (Session 2): Memory Feature Research and Planning
+  - Reviewed PRD Phase 2 enhancements, clarified memory was in MVP scope but deferred
+  - Researched Pydantic AI memory patterns, industry approaches (MemGPT, LangGraph)
+  - Identified 12 senior-level architectural questions for memory implementation
+  - Created comprehensive 4-phase implementation plan (vault prefs → conversation log → audit → extracted facts)
+  - Made Phase 1 design decisions: `_jasque/preferences.md`, YAML+markdown format
+  - Created `.agents/report/research-report-conversation-memory.md`
+  - Created `.agents/reference/memory-implementation-guide.md`
+  - Session log: `_session_logs/2026-01-15-2-memory-feature-research.md`
+
+- 2026-01-15 (Session 1): Validation and Integration Tests
+  - Fixed 2 failing API key tests (mocking issue with pydantic-settings)
+  - Added 10 integration workflow tests covering multi-tool scenarios
+  - Test count: 263 → 273 (+10 tests)
+  - All validation green: pytest, mypy, pyright, ruff
+  - Commit: `c26e6fc`
+  - Session log: `_session_logs/2026-01-15-1-validation-and-integration-tests.md`
 
 - 2026-01-14 (Session 1): Documentation Deep-Dive
   - Conducted tutored walkthrough of all infrastructure layers
@@ -286,7 +306,7 @@ None currently.
 
 ## Next Actions
 
-1. **Integration testing** - Full workflow with all 3 tools in real scenarios
-2. **Documentation** - User guide, API docs
-3. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
-4. **Review PRD** - Identify Phase 2 enhancements
+1. **Memory Phase 1** - Implement vault-based preferences (`_jasque/preferences.md`)
+2. **Memory Phase 2+** - Optionally continue to conversation logging, audit trail, extracted facts
+3. **Documentation** - User guide, API docs
+4. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
