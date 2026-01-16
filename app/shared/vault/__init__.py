@@ -7,6 +7,7 @@ from app.shared.vault.exceptions import (
     NoteAlreadyExistsError,
     NoteNotFoundError,
     PathTraversalError,
+    PreferencesParseError,
     TaskNotFoundError,
     VaultError,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "NoteAlreadyExistsError",
     "NoteNotFoundError",
     "PathTraversalError",
+    "PreferencesParseError",
     "TaskNotFoundError",
     "VaultError",
     "VaultManager",

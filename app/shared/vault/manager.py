@@ -21,11 +21,12 @@ from app.shared.vault.exceptions import (
     NoteAlreadyExistsError,
     NoteNotFoundError,
     PathTraversalError,
+    PreferencesParseError,
     TaskNotFoundError,
 )
 
 if TYPE_CHECKING:
-    pass
+    from app.features.chat.preferences import VaultPreferences
 
 logger = get_logger(__name__)
 
@@ -1192,3 +1193,87 @@ class VaultManager:
             elif name.endswith(".md"):
                 nodes.append(FolderNode(name=name, path=entry_rel, node_type="note", children=None))
         return nodes
+
+    # =========================================================================
+    # Preferences Methods
+    # =========================================================================
+
+    async def load_preferences(self) -> VaultPreferences | None:
+        """Load user preferences from _jasque/preferences.md.
+
+        Behavior:
+        - If file exists: parse and return preferences
+        - If folder exists but file doesn't: create template, return None
+        - If folder doesn't exist: return None (log warning)
+        - If YAML is malformed: raise PreferencesParseError
+
+        Returns:
+            VaultPreferences if file exists and is valid, None otherwise.
+
+        Raises:
+            PreferencesParseError: If file exists but has invalid YAML syntax.
+        """
+        from yaml import YAMLError  # type: ignore[import-untyped]
+
+        from app.features.chat.preferences import (
+            PREFERENCES_TEMPLATE,
+            UserPreferences,
+            VaultPreferences,
+        )
+
+        prefs_path = self.vault_path / "_jasque" / "preferences.md"
+        folder_path = self.vault_path / "_jasque"
+
+        # Check if preferences file exists
+        if not await aiofiles.os.path.exists(prefs_path):
+            # Check if folder exists - if so, create template
+            if await aiofiles.os.path.exists(folder_path):
+                await self._atomic_write(prefs_path, PREFERENCES_TEMPLATE)
+                logger.info(
+                    "vault.preferences.template_created",
+                    path="_jasque/preferences.md",
+                )
+            else:
+                logger.warning(
+                    "vault.preferences.not_found",
+                    path="_jasque/preferences.md",
+                )
+            return None
+
+        # Read the file
+        content = await self._read_note_content(prefs_path)
+        if content is None:
+            logger.warning(
+                "vault.preferences.read_failed",
+                path="_jasque/preferences.md",
+            )
+            return None
+
+        # Parse frontmatter
+        try:
+            post = frontmatter.loads(content)
+            metadata = dict(post.metadata)
+            body = post.content
+        except YAMLError as e:
+            raise PreferencesParseError(
+                f"Invalid YAML in _jasque/preferences.md: {e}. "
+                "Check the file for syntax errors (missing colons, incorrect indentation)."
+            ) from e
+
+        # Validate against schema
+        try:
+            structured = UserPreferences.model_validate(metadata)
+        except Exception as e:
+            # Log validation error but use defaults for invalid fields
+            logger.warning(
+                "vault.preferences.validation_warning",
+                error=str(e),
+            )
+            structured = UserPreferences()
+
+        logger.info("vault.preferences.loaded", has_structured=bool(metadata))
+
+        return VaultPreferences(
+            structured=structured,
+            additional_context=body,
+        )

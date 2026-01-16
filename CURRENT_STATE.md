@@ -18,7 +18,7 @@
 [ ] Deployment
 ```
 
-**Current Phase:** MVP Complete + Validated - All 3 tools tested with integration workflows
+**Current Phase:** MVP Complete + Memory Phase 1 - Vault-based preferences implemented
 
 ---
 
@@ -48,8 +48,8 @@
 | `shared/schemas.py` | ✅ Complete | Pagination, error response schemas |
 | `shared/utils.py` | ✅ Complete | UTC datetime utilities |
 | `shared/vault/` | ✅ Complete | VaultManager package |
-| `shared/vault/manager.py` | ✅ Complete | VaultManager with 7 query + 6 CRUD + 5 structure operations |
-| `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy (7 exceptions) |
+| `shared/vault/manager.py` | ✅ Complete | VaultManager with 7 query + 6 CRUD + 5 structure + 1 preferences operation |
+| `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy (8 exceptions) |
 | `shared/openai_adapter.py` | Not started | OpenAI format helpers |
 
 ### Features
@@ -62,7 +62,8 @@
 | Chat (OpenAI) | `/v1/chat/completions` | ✅ Complete | Streaming + non-streaming, Obsidian Copilot verified |
 | `features/chat/openai_schemas.py` | - | ✅ Complete | OpenAI request/response models |
 | `features/chat/streaming.py` | - | ✅ Complete | SSE generator using agent.iter() |
-| `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint |
+| `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint + preferences injection |
+| `features/chat/preferences.py` | - | ✅ Complete | User preferences schemas and formatting |
 | Notes | `obsidian_manage_notes` | ✅ Complete | 6 operations, bulk support, 33 tests |
 | Search | `obsidian_query_vault` | ✅ Complete | 7 operations, 51 tests |
 | Structure | `obsidian_manage_structure` | ✅ Complete | 5 operations, bulk support, 52 tests |
@@ -79,7 +80,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 273 passing | Core, shared, agents, chat, vault, tools |
+| Unit tests | ✅ 286 passing | Core, shared, agents, chat, vault, tools, preferences |
 | Integration tests | ✅ 10 passing | Multi-tool workflow tests |
 | Database tests | ✅ 6 passing | Require running PostgreSQL |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
@@ -138,7 +139,8 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/report/research-report-obsidian-copilot-api-integration.md` | Obsidian Copilot research | Complete |
 | `.agents/report/research-report-pydantic-ai-streaming-sse.md` | Streaming research | Complete |
 | `.agents/report/research-report-conversation-memory.md` | Memory patterns research | Complete |
-| `.agents/reference/memory-implementation-guide.md` | Phased memory implementation | Ready (Phase 1) |
+| `.agents/reference/memory-implementation-guide.md` | Phased memory implementation | Phase 1 complete, Phase 2-4 ready |
+| `.agents/plans/implement-vault-preferences-phase1.md` | Phase 1 implementation plan | ✅ Executed |
 | `CLAUDE.md` | Project guidelines | Complete |
 | `README.md` | Project overview | Updated for Jasque |
 | `docs/about-jasque.md` | Conceptual overview | Complete |
@@ -148,6 +150,16 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 ---
 
 ## Recent Changes
+
+- 2026-01-15 (Session 3): Implement Vault-Based Preferences (Memory Phase 1)
+  - Executed 7-task implementation plan from `.agents/plans/implement-vault-preferences-phase1.md`
+  - Created `app/features/chat/preferences.py` with schemas and formatting utilities
+  - Added `PreferencesParseError` exception and `load_preferences()` method to VaultManager
+  - Integrated preferences loading into chat completions endpoint
+  - Added 13 new tests for preferences system
+  - Test count: 273 → 286 (+13 tests)
+  - All validation green: pytest, mypy, pyright, ruff
+  - Session log: `_session_logs/2026-01-15-3-implement-vault-preferences.md`
 
 - 2026-01-15 (Session 2): Memory Feature Research and Planning
   - Reviewed PRD Phase 2 enhancements, clarified memory was in MVP scope but deferred
@@ -306,7 +318,8 @@ None currently.
 
 ## Next Actions
 
-1. **Memory Phase 1** - Implement vault-based preferences (`_jasque/preferences.md`)
-2. **Memory Phase 2+** - Optionally continue to conversation logging, audit trail, extracted facts
-3. **Documentation** - User guide, API docs
-4. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)
+1. **Memory Phase 2** - Conversation logging with PostgreSQL (optional)
+2. **Memory Phase 3** - Audit trail for tool calls (optional)
+3. **Memory Phase 4** - Extracted facts with LLM (optional)
+4. **Documentation** - User guide, API docs
+5. **Consider `/v1/embeddings`** - For Obsidian Copilot QA mode support (lower priority)

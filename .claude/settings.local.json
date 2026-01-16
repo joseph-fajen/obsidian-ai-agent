@@ -49,7 +49,10 @@
       "Skill(start-session)",
       "Bash(lsof:*)",
       "Bash(xargs kill -9)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "WebFetch(domain:serokell.io)",
+      "Skill(piv_loop:prime)",
+      "Bash(uv pip:*)"
     ]
   }
 }

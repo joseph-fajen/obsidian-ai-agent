@@ -47,3 +47,9 @@ class FolderNotEmptyError(VaultError):
     """Folder is not empty and force=False."""
 
     pass
+
+
+class PreferencesParseError(VaultError):
+    """Exception raised when preferences file has invalid YAML syntax."""
+
+    pass

@@ -319,7 +319,9 @@ async def test_task_management_workflow(
         limit=50,
     )
     assert list_result.success is True
-    assert list_result.total_count == 3, f"Should have 3 incomplete tasks, got {list_result.total_count}"
+    assert list_result.total_count == 3, (
+        f"Should have 3 incomplete tasks, got {list_result.total_count}"
+    )
 
     # Verify specific tasks
     task_texts = [item.task_text for item in list_result.results]

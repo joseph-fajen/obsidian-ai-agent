@@ -24,11 +24,13 @@ from app.features.chat.openai_schemas import (
     ChatCompletionResponse,
     ChatCompletionUsage,
 )
+from app.features.chat.preferences import VaultPreferences, format_preferences_for_agent
 from app.features.chat.streaming import (
     convert_to_pydantic_history,
     extract_last_user_message,
     generate_sse_stream,
 )
+from app.shared.vault import PreferencesParseError, VaultManager
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["openai"])
@@ -63,6 +65,17 @@ async def chat_completions(
         vault_path=Path(settings.obsidian_vault_path),
     )
 
+    # Load user preferences from vault
+    vault_manager = VaultManager(deps.vault_path)
+    preferences: VaultPreferences | None = None
+    try:
+        preferences = await vault_manager.load_preferences()
+    except PreferencesParseError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+
     # Extract the last user message for the agent
     user_message = extract_last_user_message(request.messages)
     if not user_message:
@@ -70,6 +83,11 @@ async def chat_completions(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No user message found in request",
         )
+
+    # Prepend preferences context if available
+    if preferences:
+        prefs_context = format_preferences_for_agent(preferences)
+        user_message = f"{prefs_context}\n\n---\n\n{user_message}"
 
     # Convert history (excluding last user message which becomes the prompt)
     # Find the index of the last user message
