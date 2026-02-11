@@ -1,0 +1,24 @@
+# Docker Compose override for Datadog LLM Observability
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.observability.yml up
+#
+# Requires Datadog environment variables to be set in .env:
+#   DD_API_KEY, DD_SITE, DD_LLMOBS_ENABLED, DD_LLMOBS_ML_APP, DD_LLMOBS_AGENTLESS_ENABLED
+
+services:
+  app:
+    # Override command to use ddtrace-run wrapper
+    command: ddtrace-run uvicorn app.main:app --host 0.0.0.0 --port 8123
+
+    # Pass Datadog environment variables to container
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - DD_LLMOBS_ENABLED=${DD_LLMOBS_ENABLED:-1}
+      - DD_LLMOBS_ML_APP=${DD_LLMOBS_ML_APP:-jasque}
+      - DD_LLMOBS_AGENTLESS_ENABLED=${DD_LLMOBS_AGENTLESS_ENABLED:-1}
+      - DD_SERVICE=${DD_SERVICE:-jasque}
+      - DD_ENV=${DD_ENV:-development}
+      # Enable trace correlation in logs
+      - DD_LOGS_INJECTION=true

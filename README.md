@@ -83,6 +83,56 @@ docker-compose logs -f app
 
 The Obsidian vault is mounted at `/vault` inside the container, configured via `OBSIDIAN_VAULT_PATH` in your `.env` file.
 
+## Observability (Datadog)
+
+Enable Datadog LLM Observability to monitor agent behavior, LLM calls, and performance.
+
+### Prerequisites
+
+1. [Create a Datadog account](https://www.datadoghq.com/) (free tier available)
+2. Get your API key from [Organization Settings](https://app.datadoghq.com/organization-settings/api-keys)
+3. Add to your `.env` file:
+
+```bash
+DD_API_KEY=your-api-key
+DD_SITE=datadoghq.com
+DD_LLMOBS_ENABLED=1
+DD_LLMOBS_ML_APP=jasque
+DD_LLMOBS_AGENTLESS_ENABLED=1
+```
+
+### Local Development
+
+Run with the `ddtrace-run` wrapper:
+
+```bash
+# Install dependencies (includes ddtrace)
+uv sync
+
+# Run with Datadog tracing enabled
+ddtrace-run uv run uvicorn app.main:app --port 8123
+```
+
+### Docker
+
+Use the observability override file:
+
+```bash
+# Start with Datadog tracing enabled
+docker-compose -f docker-compose.yml -f docker-compose.observability.yml up -d --build
+
+# View logs
+docker-compose logs -f app
+```
+
+### What You'll See in Datadog
+
+- **LLM Observability**: Agent runs, tool calls, LLM request/response traces
+- **APM**: HTTP request traces, database queries, error tracking
+- **Metrics**: Latency, token usage, error rates
+
+View traces at: [LLM Observability](https://app.datadoghq.com/llm) | [APM Traces](https://app.datadoghq.com/apm/traces)
+
 ## Development Commands
 
 ```bash
