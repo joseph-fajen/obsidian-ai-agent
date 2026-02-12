@@ -155,6 +155,13 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 
 ## Recent Changes
 
+- 2026-02-11 (Session 2): Datadog LLM Observability Setup and Testing
+  - Walked through Datadog setup guide with new account creation
+  - Discovered ddtrace needs env vars exported to shell (not just in .env)
+  - Fixed command order: `uv run ddtrace-run` (not `ddtrace-run uv run`)
+  - Successfully verified LLM Observability traces in Datadog (US3 region)
+  - Updated docs/datadog-setup-guide.md and README.md with correct instructions
+
 - 2026-02-11 (Session 1): Add Datadog LLM Observability
   - Executed plan from `.agents/plans/add-datadog-llm-observability.md`
   - Added `ddtrace>=3.11.0` dependency for Pydantic AI auto-instrumentation

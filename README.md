@@ -111,8 +111,15 @@ Run with the `ddtrace-run` wrapper:
 # Install dependencies (includes ddtrace)
 uv sync
 
+# Export Datadog env vars (ddtrace needs these in the shell)
+export DD_API_KEY=your-api-key
+export DD_SITE=datadoghq.com  # or your region (us3.datadoghq.com, datadoghq.eu)
+export DD_LLMOBS_ENABLED=1
+export DD_LLMOBS_ML_APP=jasque
+export DD_LLMOBS_AGENTLESS_ENABLED=1
+
 # Run with Datadog tracing enabled
-ddtrace-run uv run uvicorn app.main:app --port 8123
+uv run ddtrace-run uvicorn app.main:app --port 8123
 ```
 
 ### Docker
