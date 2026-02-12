@@ -104,9 +104,18 @@ DD_LLMOBS_AGENTLESS_ENABLED=1
 # Make sure dependencies are installed
 uv sync
 
+# Export Datadog environment variables (ddtrace needs these in the shell)
+export DD_API_KEY=your-api-key
+export DD_SITE=datadoghq.com  # or us3.datadoghq.com, datadoghq.eu, etc.
+export DD_LLMOBS_ENABLED=1
+export DD_LLMOBS_ML_APP=jasque
+export DD_LLMOBS_AGENTLESS_ENABLED=1
+
 # Run with ddtrace-run wrapper
-ddtrace-run uv run uvicorn app.main:app --port 8123
+uv run ddtrace-run uvicorn app.main:app --port 8123
 ```
+
+> **Note:** The `.env` file sets these values for the application, but `ddtrace-run` needs them exported to the shell environment. Alternatively, use a tool like `direnv` to auto-export `.env` variables.
 
 ### Option B: Docker
 
