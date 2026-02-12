@@ -87,6 +87,8 @@ The Obsidian vault is mounted at `/vault` inside the container, configured via `
 
 Enable Datadog LLM Observability to monitor agent behavior, LLM calls, and performance.
 
+> **New to Datadog?** See the [complete setup guide](docs/datadog-setup-guide.md) for step-by-step instructions.
+
 ### Prerequisites
 
 1. [Create a Datadog account](https://www.datadoghq.com/) (free tier available)
@@ -164,13 +166,17 @@ Key environment variables (see `.env.example`):
 
 ## Documentation
 
+- `docs/datadog-setup-guide.md` - Datadog LLM Observability setup (new to Datadog? start here)
+- `docs/jasque-preferences-guide.md` - Customizing Jasque with vault preferences
+- `docs/about-jasque.md` - Conceptual overview and value proposition
+- `docs/architecture-layers.md` - Technical deep-dive into the architecture
 - `.agents/reference/PRD.md` - Product requirements and architecture
 - `.agents/reference/mvp-tool-designs.md` - Detailed tool specifications
 - `CLAUDE.md` - Development guidelines
 
 ## Status
 
-**Current Phase:** Scaffolding Complete, Core Infrastructure Next
+**Current Phase:** MVP Complete + Memory Phase 1
 
 See `CURRENT_STATE.md` for detailed progress tracking.
 

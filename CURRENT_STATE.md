@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-02-11
 
 ---
 
@@ -74,6 +74,7 @@
 |-----------|--------|-------|
 | `Dockerfile` | ✅ Complete | Container definition |
 | `docker-compose.yml` | ✅ Complete | PostgreSQL on port 5433, vault mount, OBSIDIAN_VAULT_PATH override |
+| `docker-compose.observability.yml` | ✅ Complete | Datadog LLM Observability override (ddtrace-run wrapper) |
 | Volume mounting | ✅ Complete | `/vault` mount point configured |
 
 ### Testing
@@ -146,11 +147,22 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `docs/about-jasque.md` | Conceptual overview | Complete |
 | `docs/architecture-layers.md` | Technical deep-dive | Complete |
 | `docs/jasque-preferences-guide.md` | User guide for preferences | Complete |
+| `docs/datadog-setup-guide.md` | Datadog LLM Observability setup | Complete |
+| `.agents/plans/add-datadog-llm-observability.md` | Datadog integration plan | ✅ Executed |
 | `_session_logs/` | Session history | Active |
 
 ---
 
 ## Recent Changes
+
+- 2026-02-11 (Session 1): Add Datadog LLM Observability
+  - Executed plan from `.agents/plans/add-datadog-llm-observability.md`
+  - Added `ddtrace>=3.11.0` dependency for Pydantic AI auto-instrumentation
+  - Created `docker-compose.observability.yml` for containerized tracing
+  - Added Datadog environment variables to `.env.example`
+  - Created comprehensive setup guide: `docs/datadog-setup-guide.md`
+  - Updated README.md with Observability section and documentation links
+  - All validation green: 286 tests passing, mypy, pyright, ruff
 
 - 2026-01-16 (Session 1): Preferences Guide and Customization
   - Deep exploration of `_jasque/preferences` feature capabilities
