@@ -55,7 +55,7 @@ This allows `.env` to define the host path for volume mounting while the contain
 | Tool | Purpose | Operations |
 |------|---------|------------|
 | `obsidian_manage_notes` | Note CRUD + tasks | read, create, update, append, delete, complete_task |
-| `obsidian_query_vault` | Search & discovery | search_text, find_by_tag, list_notes, list_folders, get_backlinks, get_tags, list_tasks |
+| `obsidian_query_vault` | Search & discovery | search_text, find_by_name, find_by_tag, list_notes, list_folders, get_backlinks, get_tags, list_tasks |
 | `obsidian_manage_structure` | Folder management | create_folder, rename, delete_folder, move, list_structure |
 
 All tools use `obsidian_` prefix and support bulk operations.

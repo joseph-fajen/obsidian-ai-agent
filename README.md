@@ -49,7 +49,7 @@ Jasque provides 3 consolidated tools following [Anthropic's best practices](http
 | Tool | Operations | Purpose |
 |------|------------|---------|
 | `obsidian_manage_notes` | read, create, update, append, delete, complete_task | Note lifecycle + tasks |
-| `obsidian_query_vault` | search_text, find_by_tag, list_notes, list_folders, get_backlinks, get_tags, list_tasks | Search & discovery |
+| `obsidian_query_vault` | search_text, find_by_name, find_by_tag, list_notes, list_folders, get_backlinks, get_tags, list_tasks | Search & discovery |
 | `obsidian_manage_structure` | create_folder, rename, delete_folder, move, list_structure | Folder organization |
 
 ## Architecture

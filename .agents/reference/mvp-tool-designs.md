@@ -53,10 +53,10 @@ These tools follow [Anthropic's best practices for writing tools for agents](htt
 | Tool | Feature Location | Operations | Purpose |
 |------|------------------|------------|---------|
 | `obsidian_manage_notes` | `features/notes/tools.py` | 6 | Note lifecycle + task completion |
-| `obsidian_query_vault` | `features/search/tools.py` | 7 | Search, discovery, retrieval |
+| `obsidian_query_vault` | `features/search/tools.py` | 8 | Search, discovery, retrieval |
 | `obsidian_manage_structure` | `features/structure/tools.py` | 5 | Folder organization |
 
-**Total: 3 tools, 17 operations**
+**Total: 3 tools, 18 operations**
 
 ---
 
@@ -210,7 +210,7 @@ Handles all search, discovery, and retrieval operations. Find notes by content, 
 @agent.tool
 def obsidian_query_vault(
     ctx: RunContext[VaultDependencies],
-    operation: Literal["search_text", "find_by_tag", "list_notes", "list_folders",
+    operation: Literal["search_text", "find_by_name", "find_by_tag", "list_notes", "list_folders",
                        "get_backlinks", "get_tags", "list_tasks"],
     query: Optional[str] = None,
     path: Optional[str] = None,
@@ -225,8 +225,8 @@ def obsidian_query_vault(
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `operation` | `Literal["search_text", "find_by_tag", "list_notes", "list_folders", "get_backlinks", "get_tags", "list_tasks"]` | Yes | - | The query operation to perform |
-| `query` | `str` | Conditional | `None` | Search query string. Required for `search_text` |
+| `operation` | `Literal["search_text", "find_by_name", "find_by_tag", "list_notes", "list_folders", "get_backlinks", "get_tags", "list_tasks"]` | Yes | - | The query operation to perform |
+| `query` | `str` | Conditional | `None` | Search query string. Required for `search_text` and `find_by_name` |
 | `path` | `str` | No | `None` | Scope query to a specific folder or note |
 | `tags` | `List[str]` | Conditional | `None` | List of tags to search for. Required for `find_by_tag` |
 | `include_completed` | `bool` | No | `False` | Include completed tasks in `list_tasks` results |
@@ -238,6 +238,7 @@ def obsidian_query_vault(
 | Operation | Required Params | Optional Params | Description |
 |-----------|-----------------|-----------------|-------------|
 | `search_text` | `query` | `path`, `limit`, `response_format` | Full-text search across vault |
+| `find_by_name` | `query` | `path`, `limit`, `response_format` | Find notes by filename or frontmatter title |
 | `find_by_tag` | `tags` | `path`, `limit`, `response_format` | Find notes containing specified tags |
 | `list_notes` | - | `path`, `limit`, `response_format` | List all notes in vault or folder |
 | `list_folders` | - | `path` | List folder structure |
@@ -291,6 +292,15 @@ obsidian_query_vault(
     operation="search_text",
     query="budget",
     path="projects/",
+    response_format="concise"
+)
+```
+
+**Find note by name (resolves wikilinks like [[Proposed Tagging System]]):**
+```python
+obsidian_query_vault(
+    operation="find_by_name",
+    query="Proposed Tagging System",
     response_format="concise"
 )
 ```
@@ -358,6 +368,7 @@ obsidian_query_vault(
 | Error Condition | Response |
 |-----------------|----------|
 | Missing query (search_text) | `{"success": false, "message": "Query parameter is required for search_text operation"}` |
+| Missing query (find_by_name) | `{"success": false, "message": "Query parameter is required for find_by_name operation"}` |
 | Missing tags (find_by_tag) | `{"success": false, "message": "Tags parameter is required for find_by_tag operation"}` |
 | Invalid path | `{"success": false, "message": "Path not found: {path}. Use operation='list_folders' to see available paths"}` |
 | No results | `{"success": true, "total_count": 0, "results": [], "message": "No results found. Try broadening your search."}` |
@@ -722,6 +733,7 @@ Search and query the Obsidian vault. Find notes, discover connections, and list 
 
 Operations:
 - search_text: Full-text search across all notes (requires query)
+- find_by_name: Find notes by filename or title (requires query) - for resolving wikilinks
 - find_by_tag: Find notes with specific tags (requires tags list)
 - list_notes: List notes in vault or specific folder
 - list_folders: Get folder structure
@@ -734,6 +746,7 @@ Use limit to control result count.
 
 Examples:
 - Search: operation="search_text", query="meeting notes"
+- Find by name: operation="find_by_name", query="Proposed Tagging System"
 - Tags: operation="find_by_tag", tags=["project", "active"]
 - Tasks: operation="list_tasks", path="projects/", include_completed=False
 ```
@@ -760,6 +773,6 @@ Examples:
 
 ---
 
-*Document Version: 1.1*
+*Document Version: 1.2*
 *Consistent with: PRD.md v1.1*
 *Agent Name: Jasque*

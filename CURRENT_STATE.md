@@ -1,6 +1,6 @@
 # Jasque - Current State
 
-**Last Updated:** 2026-02-11
+**Last Updated:** 2026-02-12
 
 ---
 
@@ -48,7 +48,7 @@
 | `shared/schemas.py` | ✅ Complete | Pagination, error response schemas |
 | `shared/utils.py` | ✅ Complete | UTC datetime utilities |
 | `shared/vault/` | ✅ Complete | VaultManager package |
-| `shared/vault/manager.py` | ✅ Complete | VaultManager with 7 query + 6 CRUD + 5 structure + 1 preferences operation |
+| `shared/vault/manager.py` | ✅ Complete | VaultManager with 8 query + 6 CRUD + 5 structure + 1 preferences operation |
 | `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy (9 exceptions) |
 | `shared/openai_adapter.py` | Not started | OpenAI format helpers |
 
@@ -66,7 +66,7 @@
 | `features/chat/preferences.py` | - | ✅ Complete | User preferences schemas and formatting |
 | `features/chat/history.py` | - | ✅ Complete | Conversation history validation and truncation |
 | Notes | `obsidian_manage_notes` | ✅ Complete | 6 operations, bulk support, 33 tests |
-| Search | `obsidian_query_vault` | ✅ Complete | 7 operations, 51 tests |
+| Search | `obsidian_query_vault` | ✅ Complete | 8 operations, 60 tests |
 | Structure | `obsidian_manage_structure` | ✅ Complete | 5 operations, bulk support, 52 tests |
 
 ### Docker
@@ -82,7 +82,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 305 passing | Core, shared, agents, chat, vault, tools, preferences, history |
+| Unit tests | ✅ 314 passing | Core, shared, agents, chat, vault, tools, preferences, history |
 | Integration tests | ✅ 10 passing | Multi-tool workflow tests |
 | Database tests | ✅ 6 passing | Require running PostgreSQL |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
@@ -151,11 +151,21 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `docs/datadog-setup-guide.md` | Datadog LLM Observability setup | Complete |
 | `.agents/plans/add-datadog-llm-observability.md` | Datadog integration plan | ✅ Executed |
 | `.agents/plans/conversation-history-resilience.md` | History resilience plan | ✅ Executed |
+| `.agents/plans/add-find-by-name-operation.md` | find_by_name operation plan | ✅ Executed |
 | `_session_logs/` | Session history | Active |
 
 ---
 
 ## Recent Changes
+
+- 2026-02-12 (Session 1): Add find_by_name Operation
+  - Executed plan from `.agents/plans/add-find-by-name-operation.md`
+  - Added `find_by_name` operation to `obsidian_query_vault` tool for wikilink resolution
+  - Features: case-insensitive, normalized matching (spaces/hyphens/underscores equivalent)
+  - Searches filename first, then frontmatter title; sorted by match quality
+  - Added `_normalize_name()` and `find_by_name()` to VaultManager
+  - Test count: 305 → 314 (+9 tests)
+  - Commit: `2a60316`
 
 - 2026-02-11 (Session 3): Conversation History Resilience
   - Executed plan from `.agents/plans/conversation-history-resilience.md`
