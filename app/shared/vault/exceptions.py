@@ -53,3 +53,9 @@ class PreferencesParseError(VaultError):
     """Exception raised when preferences file has invalid YAML syntax."""
 
     pass
+
+
+class ConversationHistoryError(VaultError):
+    """Exception raised when conversation history contains invalid data."""
+
+    pass

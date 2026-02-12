@@ -1,6 +1,7 @@
 """Vault utilities - shared vault management functionality."""
 
 from app.shared.vault.exceptions import (
+    ConversationHistoryError,
     FolderAlreadyExistsError,
     FolderNotEmptyError,
     FolderNotFoundError,
@@ -14,6 +15,7 @@ from app.shared.vault.exceptions import (
 from app.shared.vault.manager import FolderNode, VaultManager
 
 __all__ = [
+    "ConversationHistoryError",
     "FolderAlreadyExistsError",
     "FolderNode",
     "FolderNotEmptyError",

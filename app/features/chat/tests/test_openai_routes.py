@@ -258,3 +258,141 @@ def test_chat_completions_system_message_ignored(client, mock_agent_run):
         call_kwargs = mock_agent.run.call_args.kwargs
         # History should be empty since system is ignored and only the last user msg is prompt
         assert len(call_kwargs["message_history"]) == 0
+
+
+# =============================================================================
+# Conversation History Resilience Tests
+# =============================================================================
+
+
+def test_chat_completions_rejects_malformed_tool_calls(client):
+    """Test that malformed tool call arguments return HTTP 400 with actionable message."""
+    response = client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "jasque",
+            "messages": [
+                {"role": "user", "content": "Hello"},
+                {
+                    "role": "assistant",
+                    "content": "Using a tool",
+                    "tool_calls": [
+                        {
+                            "id": "call_123",
+                            "type": "function",
+                            "function": {
+                                "name": "obsidian_query_vault",
+                                "arguments": "{invalid json",  # Malformed JSON
+                            },
+                        }
+                    ],
+                },
+                {"role": "user", "content": "What happened?"},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert "malformed tool call" in detail.lower() or "invalid data" in detail.lower()
+    assert "start a new conversation" in detail.lower()
+
+
+def test_chat_completions_accepts_valid_tool_calls(client, mock_agent_run):
+    """Test that valid tool call arguments are accepted."""
+    with patch("app.features.chat.openai_routes.get_agent") as mock_get_agent:
+        mock_agent = AsyncMock()
+        mock_agent.run.return_value = mock_agent_run
+        mock_get_agent.return_value = mock_agent
+
+        response = client.post(
+            "/v1/chat/completions",
+            json={
+                "model": "jasque",
+                "messages": [
+                    {"role": "user", "content": "List my notes"},
+                    {
+                        "role": "assistant",
+                        "content": "Let me check your vault",
+                        "tool_calls": [
+                            {
+                                "id": "call_valid",
+                                "type": "function",
+                                "function": {
+                                    "name": "obsidian_query_vault",
+                                    "arguments": '{"operation": "list_notes"}',  # Valid JSON
+                                },
+                            }
+                        ],
+                    },
+                    {"role": "user", "content": "Thanks!"},
+                ],
+            },
+        )
+
+        assert response.status_code == 200
+
+
+def test_chat_completions_truncates_long_history(client, mock_agent_run):
+    """Test that long conversation history is truncated to max_messages."""
+    with patch("app.features.chat.openai_routes.get_agent") as mock_get_agent:
+        mock_agent = AsyncMock()
+        mock_agent.run.return_value = mock_agent_run
+        mock_get_agent.return_value = mock_agent
+
+        # Create a conversation with more messages than the default limit (50)
+        # We'll use 60 messages (30 pairs of user/assistant)
+        messages = []
+        for i in range(30):
+            messages.append({"role": "user", "content": f"Message {i}"})
+            messages.append({"role": "assistant", "content": f"Response {i}"})
+        # Add final user message (this becomes the prompt, not part of history)
+        messages.append({"role": "user", "content": "Final question"})
+
+        response = client.post(
+            "/v1/chat/completions",
+            json={
+                "model": "jasque",
+                "messages": messages,
+            },
+        )
+
+        assert response.status_code == 200
+        # Agent should have been called with truncated history
+        call_kwargs = mock_agent.run.call_args.kwargs
+        # History is truncated to max_conversation_messages (default 50)
+        assert len(call_kwargs["message_history"]) <= 50
+
+
+def test_chat_completions_handles_truncated_json_error_message(client):
+    """Test that truncated JSON (EOF while parsing) returns actionable error."""
+    response = client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "jasque",
+            "messages": [
+                {"role": "user", "content": "Create a note"},
+                {
+                    "role": "assistant",
+                    "content": "Creating",
+                    "tool_calls": [
+                        {
+                            "id": "call_456",
+                            "type": "function",
+                            "function": {
+                                "name": "obsidian_manage_notes",
+                                # Truncated JSON (simulating corrupted history)
+                                "arguments": '{"operation": "create", "path": "test.md", "content": "Hello',
+                            },
+                        }
+                    ],
+                },
+                {"role": "user", "content": "Did it work?"},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    # Should mention the issue and suggest starting a new conversation
+    assert "start a new conversation" in detail.lower()

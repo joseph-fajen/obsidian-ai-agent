@@ -38,6 +38,26 @@ ContentPart = Annotated[TextContentPart | ImageContentPart, Field(discriminator=
 
 
 # =============================================================================
+# Tool Call Models (for conversation history validation)
+# =============================================================================
+
+
+class ToolCallFunction(BaseModel):
+    """Function details in a tool call."""
+
+    name: str
+    arguments: str  # JSON string - this is what we validate
+
+
+class ToolCall(BaseModel):
+    """A tool call from the assistant."""
+
+    id: str
+    type: Literal["function"] = "function"
+    function: ToolCallFunction
+
+
+# =============================================================================
 # Request Models
 # =============================================================================
 
@@ -51,6 +71,7 @@ class ChatMessage(BaseModel):
 
     role: Literal["system", "user", "assistant"]
     content: str | list[ContentPart]
+    tool_calls: list[ToolCall] | None = None  # Only present on assistant messages
 
 
 class StreamOptions(BaseModel):

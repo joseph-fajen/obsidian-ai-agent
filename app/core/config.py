@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     # Supported providers: anthropic, google-gla, google-vertex, openai
     llm_model: str = "anthropic:claude-sonnet-4-5"
 
+    # Conversation history limits (prevents excessive token usage and corrupted history issues)
+    max_conversation_messages: int = 50
+
     # API keys - set the key(s) for provider(s) you want to use
     anthropic_api_key: str | None = None
     google_api_key: str | None = None

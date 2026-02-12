@@ -175,13 +175,35 @@ async def generate_sse_stream(
         )
 
     except Exception as e:
-        logger.error(
-            "agent.llm.streaming_failed",
-            chat_id=chat_id,
-            error=str(e),
-            error_type=type(e).__name__,
-            exc_info=True,
+        error_str = str(e)
+
+        # Detect history parse errors (corrupted JSON in tool call arguments)
+        # These manifest as ValueError with "EOF while parsing" or "Expecting" messages
+        is_history_error = isinstance(e, ValueError) and (
+            "EOF while parsing" in error_str or "Expecting" in error_str
         )
+
+        if is_history_error:
+            logger.error(
+                "agent.llm.history_parse_failed",
+                chat_id=chat_id,
+                error=error_str,
+                exc_info=True,
+            )
+            user_message = (
+                "Conversation history contains corrupted data. "
+                "Please start a new conversation in Obsidian Copilot."
+            )
+        else:
+            logger.error(
+                "agent.llm.streaming_failed",
+                chat_id=chat_id,
+                error=error_str,
+                error_type=type(e).__name__,
+                exc_info=True,
+            )
+            user_message = f"Error: {error_str}"
+
         # Send error as final content chunk
         error_chunk = ChatCompletionChunk(
             id=chat_id,
@@ -189,7 +211,7 @@ async def generate_sse_stream(
             model=model_name,
             choices=[
                 ChunkChoice(
-                    delta=DeltaContent(content=f"\n\n[Error: {e!s}]"),
+                    delta=DeltaContent(content=f"\n\n[{user_message}]"),
                     finish_reason="stop",
                 )
             ],

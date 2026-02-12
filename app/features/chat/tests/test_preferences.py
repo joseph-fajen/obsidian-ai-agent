@@ -7,13 +7,11 @@ import pytest
 from app.features.chat.preferences import (
     PREFERENCES_TEMPLATE,
     DefaultFolders,
-    ResponseStyle,
     UserPreferences,
     VaultPreferences,
     format_preferences_for_agent,
 )
 from app.shared.vault import PreferencesParseError, VaultManager
-
 
 # =============================================================================
 # Schema Tests

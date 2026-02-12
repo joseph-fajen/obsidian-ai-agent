@@ -17,6 +17,10 @@ from fastapi.responses import StreamingResponse
 from app.core.agents import AgentDependencies, get_agent
 from app.core.config import get_settings
 from app.core.logging import get_logger, get_request_id
+from app.features.chat.history import (
+    truncate_conversation_history,
+    validate_tool_call_arguments,
+)
 from app.features.chat.openai_schemas import (
     ChatCompletionChoice,
     ChatCompletionMessage,
@@ -30,7 +34,7 @@ from app.features.chat.streaming import (
     extract_last_user_message,
     generate_sse_stream,
 )
-from app.shared.vault import PreferencesParseError, VaultManager
+from app.shared.vault import ConversationHistoryError, PreferencesParseError, VaultManager
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["openai"])
@@ -98,6 +102,22 @@ async def chat_completions(
 
     # History is everything before the last user message
     history_messages = request.messages[:last_user_idx] if last_user_idx > 0 else []
+
+    # Apply defensive layers: truncate first (no point validating messages we'll drop)
+    history_messages = truncate_conversation_history(
+        history_messages,
+        settings.max_conversation_messages,
+    )
+
+    # Validate tool call arguments for malformed JSON
+    try:
+        validate_tool_call_arguments(history_messages)
+    except ConversationHistoryError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+
     message_history = convert_to_pydantic_history(history_messages)
 
     model_name = request.model or "jasque"
