@@ -49,7 +49,7 @@
 | `shared/utils.py` | ✅ Complete | UTC datetime utilities |
 | `shared/vault/` | ✅ Complete | VaultManager package |
 | `shared/vault/manager.py` | ✅ Complete | VaultManager with 7 query + 6 CRUD + 5 structure + 1 preferences operation |
-| `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy (8 exceptions) |
+| `shared/vault/exceptions.py` | ✅ Complete | VaultError hierarchy (9 exceptions) |
 | `shared/openai_adapter.py` | Not started | OpenAI format helpers |
 
 ### Features
@@ -64,6 +64,7 @@
 | `features/chat/streaming.py` | - | ✅ Complete | SSE generator using agent.iter() |
 | `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint + preferences injection |
 | `features/chat/preferences.py` | - | ✅ Complete | User preferences schemas and formatting |
+| `features/chat/history.py` | - | ✅ Complete | Conversation history validation and truncation |
 | Notes | `obsidian_manage_notes` | ✅ Complete | 6 operations, bulk support, 33 tests |
 | Search | `obsidian_query_vault` | ✅ Complete | 7 operations, 51 tests |
 | Structure | `obsidian_manage_structure` | ✅ Complete | 5 operations, bulk support, 52 tests |
@@ -81,7 +82,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 286 passing | Core, shared, agents, chat, vault, tools, preferences |
+| Unit tests | ✅ 305 passing | Core, shared, agents, chat, vault, tools, preferences, history |
 | Integration tests | ✅ 10 passing | Multi-tool workflow tests |
 | Database tests | ✅ 6 passing | Require running PostgreSQL |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
@@ -149,11 +150,25 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `docs/jasque-preferences-guide.md` | User guide for preferences | Complete |
 | `docs/datadog-setup-guide.md` | Datadog LLM Observability setup | Complete |
 | `.agents/plans/add-datadog-llm-observability.md` | Datadog integration plan | ✅ Executed |
+| `.agents/plans/conversation-history-resilience.md` | History resilience plan | ✅ Executed |
 | `_session_logs/` | Session history | Active |
 
 ---
 
 ## Recent Changes
+
+- 2026-02-11 (Session 3): Conversation History Resilience
+  - Executed plan from `.agents/plans/conversation-history-resilience.md`
+  - Added three defensive layers for malformed conversation history:
+    1. Input validation - Validates tool call JSON at API boundary
+    2. Graceful error recovery - User-friendly messages instead of 500s
+    3. History limits - Configurable max messages (default 50)
+  - Created `app/features/chat/history.py` with validation and truncation
+  - Added `ConversationHistoryError` exception
+  - Added `max_conversation_messages` setting to config
+  - Extended `ChatMessage` schema with `tool_calls` field
+  - Test count: 286 → 305 (+19 tests)
+  - Commit: `6b8cb9c`
 
 - 2026-02-11 (Session 2): Datadog LLM Observability Setup and Testing
   - Walked through Datadog setup guide with new account creation

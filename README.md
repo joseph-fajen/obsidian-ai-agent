@@ -12,6 +12,7 @@ Jasque provides an OpenAI-compatible API that enables natural language interacti
 - **Folder Organization** - Create, move, rename, and delete folders
 - **Bulk Operations** - Process multiple notes or folders in a single request
 - **OpenAI-Compatible API** - Works with Obsidian Copilot and other OpenAI-compatible clients
+- **Conversation Resilience** - Gracefully handles long or corrupted conversation history
 
 ## Quick Start
 
@@ -170,6 +171,7 @@ Key environment variables (see `.env.example`):
 | `OBSIDIAN_VAULT_PATH` | Path to your Obsidian vault on the host |
 | `ANTHROPIC_API_KEY` | Your Anthropic API key |
 | `DATABASE_URL` | PostgreSQL connection string |
+| `MAX_CONVERSATION_MESSAGES` | Max history messages (default: 50) |
 
 ## Documentation
 
