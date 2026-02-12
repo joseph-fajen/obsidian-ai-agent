@@ -159,6 +159,10 @@ class VaultManager:
         """Check if a file or folder is hidden (starts with dot)."""
         return name.startswith(".")
 
+    def _normalize_name(self, name: str) -> str:
+        """Normalize a name for comparison (lowercase, spaces/hyphens/underscores equivalent)."""
+        return name.casefold().replace("-", " ").replace("_", " ")
+
     async def _get_note_title(self, path: Path, content: str | None = None) -> str:
         """Extract title from note (frontmatter or filename).
 
@@ -764,6 +768,131 @@ class VaultManager:
                     results.append(
                         NoteInfo(path=rel_path, title=title, tags=note_tags, modified=modified)
                     )
+
+    async def find_by_name(
+        self,
+        query: str,
+        path: str | None = None,
+        limit: int = 50,
+    ) -> list[NoteInfo]:
+        """Find notes by filename or frontmatter title.
+
+        Args:
+            query: Note name to search for (case-insensitive, normalized).
+                   The .md extension is stripped if present.
+            path: Optional folder to scope the search.
+            limit: Maximum number of results.
+
+        Returns:
+            List of NoteInfo objects, sorted by match quality:
+            1. Exact filename matches (shortest path first)
+            2. Filename contains matches (shortest path first)
+            3. Frontmatter title matches (shortest path first)
+        """
+        base_path = self.validate_path(path or "")
+
+        # Normalize query: strip .md extension, normalize for comparison
+        query_clean = query.removesuffix(".md")
+        query_normalized = self._normalize_name(query_clean)
+
+        # Collect all matching notes with match type for sorting
+        exact_matches: list[NoteInfo] = []
+        contains_matches: list[NoteInfo] = []
+        title_matches: list[NoteInfo] = []
+
+        await self._find_by_name_directory(
+            base_path,
+            query_normalized,
+            exact_matches,
+            contains_matches,
+            title_matches,
+        )
+
+        # Combine results: exact first, then contains, then title matches
+        # Within each category, sort by path length (shorter = more relevant)
+        exact_matches.sort(key=lambda n: len(n.path))
+        contains_matches.sort(key=lambda n: len(n.path))
+        title_matches.sort(key=lambda n: len(n.path))
+
+        results = exact_matches + contains_matches + title_matches
+        results = results[:limit]
+
+        logger.info(
+            "vault.query.find_by_name_completed",
+            query=query,
+            path=path,
+            count=len(results),
+        )
+        return results
+
+    async def _find_by_name_directory(
+        self,
+        path: Path,
+        query_normalized: str,
+        exact_matches: list[NoteInfo],
+        contains_matches: list[NoteInfo],
+        title_matches: list[NoteInfo],
+    ) -> None:
+        """Recursively find notes matching the query by name or title.
+
+        Args:
+            path: Directory path to search.
+            query_normalized: Normalized query string.
+            exact_matches: List to append exact filename matches to.
+            contains_matches: List to append filename contains matches to.
+            title_matches: List to append frontmatter title matches to.
+        """
+        try:
+            entries = await aiofiles.os.listdir(path)
+        except OSError:
+            return
+
+        for entry in entries:
+            if self._is_hidden(entry):
+                continue
+
+            full_path = path / entry
+
+            try:
+                stat = await aiofiles.os.stat(full_path)
+            except OSError:
+                continue
+
+            if stat.st_mode & 0o170000 == 0o040000:  # Is directory
+                await self._find_by_name_directory(
+                    full_path,
+                    query_normalized,
+                    exact_matches,
+                    contains_matches,
+                    title_matches,
+                )
+            elif entry.endswith(".md"):
+                content = await self._read_note_content(full_path)
+                if content is None:
+                    continue
+
+                # Normalize filename (without .md extension)
+                filename_stem = entry.removesuffix(".md")
+                filename_normalized = self._normalize_name(filename_stem)
+
+                rel_path = str(full_path.relative_to(self.vault_path))
+                title = await self._get_note_title(full_path, content)
+                tags = await self._get_note_tags(content)
+                modified = datetime.fromtimestamp(stat.st_mtime, tz=UTC)
+
+                note_info = NoteInfo(path=rel_path, title=title, tags=tags, modified=modified)
+
+                # Check for exact filename match
+                if filename_normalized == query_normalized:
+                    exact_matches.append(note_info)
+                # Check for filename contains match
+                elif query_normalized in filename_normalized:
+                    contains_matches.append(note_info)
+                # Check for frontmatter title match
+                else:
+                    title_normalized = self._normalize_name(title)
+                    if query_normalized == title_normalized or query_normalized in title_normalized:
+                        title_matches.append(note_info)
 
     async def get_backlinks(self, note_path: str, limit: int = 50) -> list[BacklinkResult]:
         """Find notes that link to the specified note.

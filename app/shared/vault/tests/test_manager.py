@@ -328,6 +328,98 @@ async def test_find_by_tag_in_folder(vault_path: Path):
 
 
 # =============================================================================
+# find_by_name Tests
+# =============================================================================
+
+
+async def test_find_by_name_exact_match(vault_path: Path):
+    """Find note by exact filename match."""
+    manager = VaultManager(vault_path)
+    results = await manager.find_by_name("test-note")
+
+    assert len(results) >= 1
+    assert results[0].path == "notes/test-note.md"
+
+
+async def test_find_by_name_case_insensitive(vault_path: Path):
+    """Find note with case-insensitive matching."""
+    manager = VaultManager(vault_path)
+    results = await manager.find_by_name("TEST-NOTE")
+
+    assert len(results) >= 1
+    assert results[0].path == "notes/test-note.md"
+
+
+async def test_find_by_name_normalized(tmp_path: Path):
+    """Find note with normalized name matching (spaces/hyphens/underscores equivalent)."""
+    # Create notes with different naming conventions
+    (tmp_path / "my-note.md").write_text("# My Note\n\nContent")
+    (tmp_path / "my_other_note.md").write_text("# My Other Note\n\nContent")
+    (tmp_path / "my special note.md").write_text("# My Special Note\n\nContent")
+
+    manager = VaultManager(tmp_path)
+
+    # "my note" should find "my-note.md"
+    results = await manager.find_by_name("my note")
+    assert len(results) >= 1
+    assert results[0].path == "my-note.md"
+
+    # "my_note" should find "my-note.md"
+    results = await manager.find_by_name("my_note")
+    assert len(results) >= 1
+    assert results[0].path == "my-note.md"
+
+
+async def test_find_by_name_frontmatter_title(tmp_path: Path):
+    """Find note by frontmatter title field."""
+    (tmp_path / "note.md").write_text("---\ntitle: Proposed Tagging System\n---\n\nContent")
+
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("Proposed Tagging System")
+
+    assert len(results) == 1
+    assert results[0].path == "note.md"
+    assert results[0].title == "Proposed Tagging System"
+
+
+async def test_find_by_name_strips_md_extension(vault_path: Path):
+    """Query with .md extension is handled."""
+    manager = VaultManager(vault_path)
+    results = await manager.find_by_name("test-note.md")
+
+    assert len(results) >= 1
+    assert results[0].path == "notes/test-note.md"
+
+
+async def test_find_by_name_ordering(tmp_path: Path):
+    """Results are sorted: exact matches first, then contains, then title matches."""
+    # Create notes with different match types
+    (tmp_path / "meeting.md").write_text("# Meeting\n\nContent")  # Exact match
+    (tmp_path / "weekly-meeting-notes.md").write_text("# Weekly\n\nContent")  # Contains
+    (tmp_path / "notes.md").write_text("---\ntitle: Meeting Agenda\n---\n\nContent")  # Title
+
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("meeting")
+
+    assert len(results) == 3
+    # Exact match should be first
+    assert results[0].path == "meeting.md"
+    # Contains match second
+    assert results[1].path == "weekly-meeting-notes.md"
+    # Title match last
+    assert results[2].path == "notes.md"
+
+
+async def test_find_by_name_in_folder(vault_path: Path):
+    """Find by name respects path parameter."""
+    manager = VaultManager(vault_path)
+    results = await manager.find_by_name("alpha", path="projects")
+
+    assert len(results) == 1
+    assert results[0].path == "projects/alpha.md"
+
+
+# =============================================================================
 # get_backlinks Tests
 # =============================================================================
 

@@ -198,6 +198,64 @@ async def test_find_by_tag_returns_results(mock_ctx, toolset):
         assert result.results[0].path == "projects/alpha.md"
 
 
+async def test_find_by_name_requires_query(mock_ctx, toolset):
+    """find_by_name requires query parameter."""
+    tool_fn = toolset.tools["obsidian_query_vault"].function
+
+    result = await tool_fn(
+        mock_ctx,
+        operation="find_by_name",
+        query=None,
+        path=None,
+        tags=None,
+        include_completed=False,
+        response_format="concise",
+        limit=50,
+    )
+
+    assert result.success is False
+    assert "Query parameter is required" in result.message
+
+
+async def test_find_by_name_returns_results(mock_ctx, toolset):
+    """find_by_name returns matching notes."""
+    tool_fn = toolset.tools["obsidian_query_vault"].function
+
+    mock_results = [
+        NoteInfo(
+            path="notes/meeting-notes.md",
+            title="Meeting Notes",
+            tags=["meeting"],
+            modified=None,
+        )
+    ]
+
+    with patch(
+        "app.features.obsidian_query_vault.obsidian_query_vault_tool.VaultManager"
+    ) as MockVault:
+        mock_vault_instance = AsyncMock()
+        mock_vault_instance.find_by_name.return_value = mock_results
+        MockVault.return_value = mock_vault_instance
+
+        result = await tool_fn(
+            mock_ctx,
+            operation="find_by_name",
+            query="Meeting Notes",
+            path=None,
+            tags=None,
+            include_completed=False,
+            response_format="detailed",
+            limit=50,
+        )
+
+        assert result.success is True
+        assert result.operation == "find_by_name"
+        assert len(result.results) == 1
+        assert result.results[0].path == "notes/meeting-notes.md"
+        assert result.results[0].title == "Meeting Notes"
+        assert result.results[0].tags == ["meeting"]
+
+
 async def test_list_notes_returns_notes(mock_ctx, toolset):
     """list_notes returns all notes."""
     tool_fn = toolset.tools["obsidian_query_vault"].function

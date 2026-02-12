@@ -30,6 +30,7 @@ def register_obsidian_query_vault_tool(
         ctx: RunContext[AgentDependencies],
         operation: Literal[
             "search_text",
+            "find_by_name",
             "find_by_tag",
             "list_notes",
             "list_folders",
@@ -48,6 +49,7 @@ def register_obsidian_query_vault_tool(
 
         Use this when you need to:
         - Find notes by content (search_text) - for locating relevant information
+        - Find notes by name (find_by_name) - for resolving wikilinks like [[Note Name]]
         - Find notes by tag (find_by_tag) - when user mentions tags or categories
         - Browse vault structure (list_notes, list_folders) - for navigation and overview
         - Discover note connections (get_backlinks) - for exploring relationships
@@ -63,14 +65,17 @@ def register_obsidian_query_vault_tool(
         Args:
             operation: The query operation to perform:
                 - "search_text": Full-text search across notes (requires query param)
+                - "find_by_name": Find notes by filename or title (requires query param)
                 - "find_by_tag": Find notes with specific tags (requires tags param)
                 - "list_notes": List all notes, optionally in a folder (path optional)
                 - "list_folders": Get folder structure (path optional)
                 - "get_backlinks": Find notes linking to a note (requires path param)
                 - "get_tags": Get all unique tags in vault (no params needed)
                 - "list_tasks": Find tasks/checkboxes (path optional)
-            query: Search string for search_text operation. Case-insensitive.
-                Example: "meeting notes", "project plan", "bug fix"
+            query: Search string for search_text and find_by_name operations. Case-insensitive.
+                For find_by_name: matches filename or frontmatter title, normalized
+                (spaces/hyphens/underscores treated as equivalent). .md extension stripped.
+                Examples: "Meeting Notes", "project-plan", "my_note.md"
             path: Folder or note path to scope the operation.
                 Examples: "projects/", "daily/2025-01-15.md", "inbox"
                 Omit to search entire vault.
@@ -103,10 +108,17 @@ def register_obsidian_query_vault_tool(
             - Always prefer smaller limits for faster responses
 
         Examples:
-            # Search for meeting notes
+            # Search for meeting notes by content
             obsidian_query_vault(
                 operation="search_text",
                 query="weekly standup",
+                response_format="concise"
+            )
+
+            # Find a specific note by name (resolves [[Proposed Tagging System]])
+            obsidian_query_vault(
+                operation="find_by_name",
+                query="Proposed Tagging System",
                 response_format="concise"
             )
 
@@ -188,6 +200,28 @@ def register_obsidian_query_vault_tool(
                     for r in tag_results
                 ]
 
+            elif operation == "find_by_name":
+                if not query:
+                    return QueryResult(
+                        success=False,
+                        operation=operation,
+                        total_count=0,
+                        results=[],
+                        message="Query parameter is required for find_by_name operation. "
+                        "Example: query='Meeting Notes'",
+                    )
+
+                name_results = await vault.find_by_name(query, path=path, limit=limit)
+                items = [
+                    QueryResultItem(
+                        path=r.path,
+                        title=r.title,
+                        tags=r.tags if response_format == "detailed" else None,
+                        modified=r.modified if response_format == "detailed" else None,
+                    )
+                    for r in name_results
+                ]
+
             elif operation == "list_notes":
                 note_results = await vault.list_notes(folder=path)
                 limited_notes = note_results[:limit]
@@ -267,7 +301,7 @@ def register_obsidian_query_vault_tool(
                     total_count=0,
                     results=[],
                     message=f"Unknown operation: {operation}. "
-                    "Valid operations: search_text, find_by_tag, list_notes, "
+                    "Valid operations: search_text, find_by_name, find_by_tag, list_notes, "
                     "list_folders, get_backlinks, get_tags, list_tasks",
                 )
 
