@@ -39,6 +39,10 @@ WIKILINK_PATTERN = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]+)?\]\]")
 TASK_PATTERN = re.compile(r"^(\s*)-\s*\[([ xX])\]\s*(.+)$", re.MULTILINE)
 TAG_PATTERN = re.compile(r"#([a-zA-Z][a-zA-Z0-9_/-]*)")
 
+# Folders excluded from name-based searches (find_by_name)
+# These contain auto-generated content, not user-created notes
+NAME_SEARCH_EXCLUSIONS: set[str] = {"copilot"}
+
 
 # =============================================================================
 # Data Classes
@@ -166,13 +170,20 @@ class VaultManager:
         """Check if a file or folder is hidden (starts with dot)."""
         return name.startswith(".")
 
-    def _is_excluded(self, rel_path: str, explicit_path: str | None = None) -> bool:
+    def _is_excluded(
+        self,
+        rel_path: str,
+        explicit_path: str | None = None,
+        operation_exclusions: set[str] | None = None,
+    ) -> bool:
         """Check if path should be excluded from search.
 
         Args:
             rel_path: Relative path from vault root.
             explicit_path: If set, user-configured exclusions are bypassed
                 (but _jasque is still excluded).
+            operation_exclusions: Additional folders to exclude for specific
+                operations (e.g., copilot for find_by_name).
 
         Returns:
             True if path should be excluded from results.
@@ -184,6 +195,10 @@ class VaultManager:
 
         # _jasque is ALWAYS excluded (system folder)
         if first_folder == "_jasque":
+            return True
+
+        # Operation-specific exclusions (e.g., copilot for find_by_name)
+        if operation_exclusions and first_folder in operation_exclusions:
             return True
 
         # If user provided explicit path, skip user-configured exclusions
@@ -921,7 +936,11 @@ class VaultManager:
 
             # Check folder exclusion
             rel_path = str(full_path.relative_to(self.vault_path))
-            if self._is_excluded(rel_path, explicit_path=explicit_path):
+            if self._is_excluded(
+                rel_path,
+                explicit_path=explicit_path,
+                operation_exclusions=NAME_SEARCH_EXCLUSIONS,
+            ):
                 continue
 
             try:

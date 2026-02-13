@@ -1106,15 +1106,15 @@ async def test_find_by_name_excludes_configured_folder(tmp_path: Path):
 
 
 async def test_find_by_name_explicit_path_bypasses_exclusion(tmp_path: Path):
-    """Explicit path parameter bypasses user exclusions (but not _jasque)."""
-    (tmp_path / "copilot").mkdir()
-    (tmp_path / "copilot" / "conversation.md").write_text("# Chat")
+    """Explicit path parameter bypasses user exclusions (but not _jasque or copilot)."""
+    (tmp_path / "archive").mkdir()
+    (tmp_path / "archive" / "conversation.md").write_text("# Chat")
 
-    manager = VaultManager(tmp_path, exclude_folders=["copilot"])
-    results = await manager.find_by_name("conversation", path="copilot")
+    manager = VaultManager(tmp_path, exclude_folders=["archive"])
+    results = await manager.find_by_name("conversation", path="archive")
 
     assert len(results) == 1
-    assert results[0].path == "copilot/conversation.md"
+    assert results[0].path == "archive/conversation.md"
 
 
 async def test_find_by_name_explicit_path_cannot_bypass_jasque(tmp_path: Path):
@@ -1126,6 +1126,40 @@ async def test_find_by_name_explicit_path_cannot_bypass_jasque(tmp_path: Path):
     results = await manager.find_by_name("preferences", path="_jasque")
 
     assert len(results) == 0
+
+
+async def test_find_by_name_excludes_copilot_folder(tmp_path: Path):
+    """find_by_name excludes copilot conversation logs."""
+    # Create a real note
+    (tmp_path / "Project Notes.md").write_text("# Project Notes\n\nContent here.")
+
+    # Create copilot conversation with matching name pattern
+    copilot_dir = tmp_path / "copilot" / "copilot-conversations"
+    copilot_dir.mkdir(parents=True)
+    (copilot_dir / "Project_Notes_conversation.md").write_text("# Chat about Project Notes")
+
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("Project Notes")
+
+    # Should find the real note, not the copilot conversation
+    assert len(results) == 1
+    assert results[0].path == "Project Notes.md"
+    assert "copilot" not in results[0].path
+
+
+async def test_search_text_includes_copilot_folder(tmp_path: Path):
+    """search_text should still include copilot conversations (not excluded)."""
+    # Create copilot conversation
+    copilot_dir = tmp_path / "copilot" / "copilot-conversations"
+    copilot_dir.mkdir(parents=True)
+    (copilot_dir / "chat_about_testing.md").write_text("# Discussion about unit testing")
+
+    manager = VaultManager(tmp_path)
+    results = await manager.search_text("unit testing")
+
+    # Should find content in copilot folder
+    assert len(results) == 1
+    assert "copilot" in results[0].path
 
 
 async def test_search_text_excludes_folders(tmp_path: Path):
