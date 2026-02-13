@@ -4,7 +4,7 @@
 
 This document explains what Jasque is, why it exists, and the value it provides.
 
-**MVP Status:** January 2026 - All 3 tools implemented and tested.
+**MVP Status:** February 2026 - All 3 tools implemented and tested with 333 unit tests.
 
 ---
 
@@ -29,7 +29,7 @@ It can only work with what you send it. It has no hands, no eyes into your files
 
 ## What Can Jasque Do?
 
-Jasque provides 3 tools with 17 total operations:
+Jasque provides 3 tools with 19 total operations:
 
 ### Tool 1: `obsidian_manage_notes` - Note Lifecycle
 
@@ -47,6 +47,7 @@ Jasque provides 3 tools with 17 total operations:
 | Operation | What It Does |
 |-----------|--------------|
 | `search_text` | Full-text search across vault |
+| `find_by_name` | Find notes by filename (wikilink resolution) |
 | `find_by_tag` | Find notes with specific tags |
 | `list_notes` | List notes in a folder |
 | `list_folders` | List subfolders |
@@ -159,23 +160,26 @@ Your Obsidian vault is mounted into the Jasque container, giving the agent sandb
 
 ---
 
-## Current Status (MVP)
+## Current Status (MVP + Phase 1)
 
-As of January 2026:
+As of February 2026:
 
 | Component | Status |
 |-----------|--------|
-| All 3 tools (17 operations) | Complete |
+| All 3 tools (19 operations) | Complete |
 | OpenAI-compatible API | Complete |
 | Streaming responses | Complete |
 | Multi-LLM support | Complete (Claude, Gemini, OpenAI) |
-| Unit tests | 263 passing |
+| Vault-based preferences | Complete (`_jasque/preferences.md`) |
+| Conversation resilience | Complete (validation + truncation) |
+| Folder exclusion | Complete (noise reduction from system folders) |
+| Unit tests | 333 passing |
 | Obsidian Copilot integration | Verified |
+| Datadog LLM Observability | Available (optional) |
 
 ### Future Possibilities
 
-- Chat history persistence
-- User preferences
+- Chat history persistence (PostgreSQL)
 - Embeddings API for semantic search
 - Additional vault operations
 

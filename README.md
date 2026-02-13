@@ -7,10 +7,13 @@ Jasque provides an OpenAI-compatible API that enables natural language interacti
 ## Features
 
 - **Natural Language Vault Management** - Create, read, update, and delete notes using conversation
-- **Smart Search & Discovery** - Full-text search, tag filtering, backlinks, and task discovery
+- **Smart Search & Discovery** - Full-text search, tag filtering, backlinks, wikilink resolution, and task discovery
+- **Intelligent Noise Reduction** - Auto-excludes system folders (copilot, _jasque) from search results
 - **Task Management** - List incomplete tasks across your vault and mark them complete
 - **Folder Organization** - Create, move, rename, and delete folders
 - **Bulk Operations** - Process multiple notes or folders in a single request
+- **Vault-Based Preferences** - Customize Jasque's behavior via `_jasque/preferences.md`
+- **Multi-LLM Support** - Claude, Gemini, or OpenAI as the backing model
 - **OpenAI-Compatible API** - Works with Obsidian Copilot and other OpenAI-compatible clients
 - **Conversation Resilience** - Gracefully handles long or corrupted conversation history
 
@@ -66,11 +69,11 @@ app/
 
 ## Tech Stack
 
-- **Agent Framework**: Pydantic AI with Anthropic Claude
+- **Agent Framework**: Pydantic AI with multi-LLM support (Claude, Gemini, OpenAI)
 - **API**: FastAPI with OpenAI-compatible endpoints
 - **Database**: PostgreSQL with SQLAlchemy + Alembic
 - **Vault Access**: Docker volume mount (sandboxed)
-- **Type Safety**: Strict MyPy + Pyright
+- **Type Safety**: Strict MyPy + Pyright (333 tests)
 
 ## Docker Deployment
 
@@ -169,7 +172,10 @@ Key environment variables (see `.env.example`):
 | Variable | Description |
 |----------|-------------|
 | `OBSIDIAN_VAULT_PATH` | Path to your Obsidian vault on the host |
-| `ANTHROPIC_API_KEY` | Your Anthropic API key |
+| `LLM_MODEL` | Model to use (e.g., `anthropic:claude-sonnet-4-5`, `google-gla:gemini-2.5-pro`) |
+| `ANTHROPIC_API_KEY` | API key for Anthropic models |
+| `GOOGLE_API_KEY` | API key for Google/Gemini models |
+| `OPENAI_API_KEY` | API key for OpenAI models |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `MAX_CONVERSATION_MESSAGES` | Max history messages (default: 50) |
 

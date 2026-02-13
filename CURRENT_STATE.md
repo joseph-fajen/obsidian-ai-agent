@@ -65,9 +65,9 @@
 | `features/chat/openai_routes.py` | - | ✅ Complete | OpenAI-compatible endpoint + preferences injection |
 | `features/chat/preferences.py` | - | ✅ Complete | User preferences schemas and formatting |
 | `features/chat/history.py` | - | ✅ Complete | Conversation history validation and truncation |
-| Notes | `obsidian_manage_notes` | ✅ Complete | 6 operations, bulk support, 33 tests |
-| Search | `obsidian_query_vault` | ✅ Complete | 8 operations, 60 tests |
-| Structure | `obsidian_manage_structure` | ✅ Complete | 5 operations, bulk support, 52 tests |
+| Notes | `obsidian_manage_notes` | ✅ Complete | 6 operations, bulk support |
+| Search | `obsidian_query_vault` | ✅ Complete | 8 operations, folder exclusion, smart name matching |
+| Structure | `obsidian_manage_structure` | ✅ Complete | 5 operations, bulk support |
 
 ### Docker
 
@@ -82,7 +82,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Unit tests | ✅ 314 passing | Core, shared, agents, chat, vault, tools, preferences, history |
+| Unit tests | ✅ 333 passing | Core, shared, agents, chat, vault, tools, preferences, history |
 | Integration tests | ✅ 10 passing | Multi-tool workflow tests |
 | Database tests | ✅ 6 passing | Require running PostgreSQL |
 | E2E test | ✅ Verified | curl to /v1/chat/completions (streaming + non-streaming) |
@@ -152,11 +152,32 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/obsidian_db
 | `.agents/plans/add-datadog-llm-observability.md` | Datadog integration plan | ✅ Executed |
 | `.agents/plans/conversation-history-resilience.md` | History resilience plan | ✅ Executed |
 | `.agents/plans/add-find-by-name-operation.md` | find_by_name operation plan | ✅ Executed |
+| `.agents/plans/enhanced-search-normalization-and-folder-exclusion.md` | Search normalization plan | ✅ Executed |
+| `.agents/plans/exclude-copilot-from-find-by-name.md` | Copilot exclusion plan | ✅ Executed |
 | `_session_logs/` | Session history | Active |
 
 ---
 
 ## Recent Changes
+
+- 2026-02-12 (Session 3): Exclude Copilot Folder from find_by_name
+  - Executed plan from `.agents/plans/exclude-copilot-from-find-by-name.md`
+  - Added `NAME_SEARCH_EXCLUSIONS` constant for operation-specific folder exclusions
+  - Extended `_is_excluded()` with `operation_exclusions` parameter
+  - Copilot conversations no longer appear in wikilink resolution results
+  - `search_text` still includes copilot folder (intentional - useful for finding past conversations)
+  - Test count: 331 → 333 (+2 tests)
+  - Commit: `142316b`
+
+- 2026-02-12 (Session 2): Enhanced Search Normalization and Folder Exclusion
+  - Executed plan from `.agents/plans/enhanced-search-normalization-and-folder-exclusion.md`
+  - Enhanced `_normalize_name()` to handle leading underscores and punctuation
+  - Added configurable folder exclusion system via `exclude_folders` parameter
+  - `_jasque/` always excluded (system folder); user folders configurable
+  - Exclusion applied to: search_text, find_by_name, find_by_tag, get_backlinks, list_tasks
+  - Explicit path parameter bypasses user exclusions but not `_jasque`
+  - Test count: 314 → 331 (+17 tests)
+  - Commit: `9e4ad80`
 
 - 2026-02-12 (Session 1): Add find_by_name Operation
   - Executed plan from `.agents/plans/add-find-by-name-operation.md`
