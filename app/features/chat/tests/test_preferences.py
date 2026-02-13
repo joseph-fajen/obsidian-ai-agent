@@ -260,3 +260,37 @@ def test_preferences_template_validates_as_schema() -> None:
 
     assert prefs.date_format == "YYYY-MM-DD"
     assert prefs.default_folders.meeting_notes == "Meetings/"
+
+
+# =============================================================================
+# Search Exclude Folders Tests
+# =============================================================================
+
+
+def test_user_preferences_search_exclude_folders_default() -> None:
+    """UserPreferences should have default exclusion for copilot folder."""
+    prefs = UserPreferences()
+    assert prefs.search_exclude_folders == ["copilot"]
+
+
+def test_user_preferences_search_exclude_folders_custom() -> None:
+    """UserPreferences should accept custom exclusion list."""
+    prefs = UserPreferences(search_exclude_folders=["copilot", "templates"])
+    assert "templates" in prefs.search_exclude_folders
+    assert "copilot" in prefs.search_exclude_folders
+
+
+def test_user_preferences_search_exclude_folders_empty() -> None:
+    """UserPreferences should allow empty exclusion list."""
+    prefs = UserPreferences(search_exclude_folders=[])
+    assert prefs.search_exclude_folders == []
+
+
+def test_preferences_template_includes_search_exclude_folders() -> None:
+    """PREFERENCES_TEMPLATE should include search_exclude_folders field."""
+    import frontmatter
+
+    post = frontmatter.loads(PREFERENCES_TEMPLATE)
+    prefs = UserPreferences.model_validate(post.metadata)
+
+    assert prefs.search_exclude_folders == ["copilot"]

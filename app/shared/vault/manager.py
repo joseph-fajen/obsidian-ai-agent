@@ -126,13 +126,20 @@ class VaultManager:
     traversal attacks.
     """
 
-    def __init__(self, vault_path: Path) -> None:
+    def __init__(
+        self,
+        vault_path: Path,
+        exclude_folders: list[str] | None = None,
+    ) -> None:
         """Initialize the VaultManager.
 
         Args:
             vault_path: Path to the Obsidian vault root.
+            exclude_folders: Folders to exclude from search operations.
+                Note: _jasque is always excluded regardless of this setting.
         """
         self.vault_path = vault_path.resolve()
+        self._exclude_folders = set(exclude_folders or [])
 
     def validate_path(self, path: str) -> Path:
         """Validate that a path stays within the vault root.
@@ -159,9 +166,51 @@ class VaultManager:
         """Check if a file or folder is hidden (starts with dot)."""
         return name.startswith(".")
 
+    def _is_excluded(self, rel_path: str, explicit_path: str | None = None) -> bool:
+        """Check if path should be excluded from search.
+
+        Args:
+            rel_path: Relative path from vault root.
+            explicit_path: If set, user-configured exclusions are bypassed
+                (but _jasque is still excluded).
+
+        Returns:
+            True if path should be excluded from results.
+        """
+        parts = rel_path.split("/")
+        if not parts or not parts[0]:
+            return False
+        first_folder = parts[0]
+
+        # _jasque is ALWAYS excluded (system folder)
+        if first_folder == "_jasque":
+            return True
+
+        # If user provided explicit path, skip user-configured exclusions
+        if explicit_path:
+            return False
+
+        # Check user-configured exclusions
+        return first_folder in self._exclude_folders
+
     def _normalize_name(self, name: str) -> str:
-        """Normalize a name for comparison (lowercase, spaces/hyphens/underscores equivalent)."""
-        return name.casefold().replace("-", " ").replace("_", " ")
+        """Normalize a name for comparison.
+
+        - Strips leading underscores (common Obsidian index note pattern)
+        - Removes punctuation (. , ' ? !)
+        - Normalizes case
+        - Treats spaces/hyphens/underscores as equivalent
+        - Collapses multiple spaces to single space
+        """
+        # Strip leading underscores
+        name = name.lstrip("_")
+        # Remove common punctuation
+        for char in ".,?!'":
+            name = name.replace(char, "")
+        # Normalize case and separators
+        normalized = name.casefold().replace("-", " ").replace("_", " ")
+        # Collapse multiple spaces
+        return " ".join(normalized.split())
 
     async def _get_note_title(self, path: Path, content: str | None = None) -> str:
         """Extract title from note (frontmatter or filename).
@@ -611,7 +660,7 @@ class VaultManager:
         results: list[SearchResult] = []
         query_lower = query.lower()
 
-        await self._search_directory(base_path, query_lower, results, limit)
+        await self._search_directory(base_path, query_lower, results, limit, explicit_path=path)
 
         logger.info(
             "vault.query.search_text_completed",
@@ -627,6 +676,7 @@ class VaultManager:
         query: str,
         results: list[SearchResult],
         limit: int,
+        explicit_path: str | None = None,
     ) -> None:
         """Recursively search a directory for matching notes.
 
@@ -635,6 +685,7 @@ class VaultManager:
             query: Lowercase search query.
             results: List to append results to.
             limit: Maximum total results.
+            explicit_path: If set, user-configured exclusions are bypassed.
         """
         if len(results) >= limit:
             return
@@ -653,13 +704,18 @@ class VaultManager:
 
             full_path = path / entry
 
+            # Check folder exclusion
+            rel_path = str(full_path.relative_to(self.vault_path))
+            if self._is_excluded(rel_path, explicit_path=explicit_path):
+                continue
+
             try:
                 stat = await aiofiles.os.stat(full_path)
             except OSError:
                 continue
 
             if stat.st_mode & 0o170000 == 0o040000:  # Is directory
-                await self._search_directory(full_path, query, results, limit)
+                await self._search_directory(full_path, query, results, limit, explicit_path)
             elif entry.endswith(".md"):
                 content = await self._read_note_content(full_path)
                 if content is None:
@@ -704,7 +760,7 @@ class VaultManager:
         results: list[NoteInfo] = []
         tag_set = {t.lower().lstrip("#") for t in tags}
 
-        await self._find_by_tag_directory(base_path, tag_set, results, limit)
+        await self._find_by_tag_directory(base_path, tag_set, results, limit, explicit_path=path)
 
         logger.info(
             "vault.query.find_by_tag_completed",
@@ -720,6 +776,7 @@ class VaultManager:
         tags: set[str],
         results: list[NoteInfo],
         limit: int,
+        explicit_path: str | None = None,
     ) -> None:
         """Recursively find notes with matching tags.
 
@@ -728,6 +785,7 @@ class VaultManager:
             tags: Set of lowercase tags to match.
             results: List to append results to.
             limit: Maximum total results.
+            explicit_path: If set, user-configured exclusions are bypassed.
         """
         if len(results) >= limit:
             return
@@ -746,13 +804,18 @@ class VaultManager:
 
             full_path = path / entry
 
+            # Check folder exclusion
+            rel_path = str(full_path.relative_to(self.vault_path))
+            if self._is_excluded(rel_path, explicit_path=explicit_path):
+                continue
+
             try:
                 stat = await aiofiles.os.stat(full_path)
             except OSError:
                 continue
 
             if stat.st_mode & 0o170000 == 0o040000:  # Is directory
-                await self._find_by_tag_directory(full_path, tags, results, limit)
+                await self._find_by_tag_directory(full_path, tags, results, limit, explicit_path)
             elif entry.endswith(".md"):
                 content = await self._read_note_content(full_path)
                 if content is None:
@@ -806,6 +869,7 @@ class VaultManager:
             exact_matches,
             contains_matches,
             title_matches,
+            explicit_path=path,
         )
 
         # Combine results: exact first, then contains, then title matches
@@ -832,6 +896,7 @@ class VaultManager:
         exact_matches: list[NoteInfo],
         contains_matches: list[NoteInfo],
         title_matches: list[NoteInfo],
+        explicit_path: str | None = None,
     ) -> None:
         """Recursively find notes matching the query by name or title.
 
@@ -841,6 +906,7 @@ class VaultManager:
             exact_matches: List to append exact filename matches to.
             contains_matches: List to append filename contains matches to.
             title_matches: List to append frontmatter title matches to.
+            explicit_path: If set, user-configured exclusions are bypassed.
         """
         try:
             entries = await aiofiles.os.listdir(path)
@@ -852,6 +918,11 @@ class VaultManager:
                 continue
 
             full_path = path / entry
+
+            # Check folder exclusion
+            rel_path = str(full_path.relative_to(self.vault_path))
+            if self._is_excluded(rel_path, explicit_path=explicit_path):
+                continue
 
             try:
                 stat = await aiofiles.os.stat(full_path)
@@ -865,6 +936,7 @@ class VaultManager:
                     exact_matches,
                     contains_matches,
                     title_matches,
+                    explicit_path=explicit_path,
                 )
             elif entry.endswith(".md"):
                 content = await self._read_note_content(full_path)
@@ -959,6 +1031,11 @@ class VaultManager:
 
             full_path = path / entry
 
+            # Check folder exclusion (backlinks always apply exclusions)
+            rel_path = str(full_path.relative_to(self.vault_path))
+            if self._is_excluded(rel_path, explicit_path=None):
+                continue
+
             try:
                 stat = await aiofiles.os.stat(full_path)
             except OSError:
@@ -1049,7 +1126,7 @@ class VaultManager:
         base_path = self.validate_path(path or "")
         results: list[TaskInfo] = []
 
-        await self._find_tasks(base_path, include_completed, results, limit)
+        await self._find_tasks(base_path, include_completed, results, limit, explicit_path=path)
 
         logger.info(
             "vault.query.list_tasks_completed",
@@ -1065,6 +1142,7 @@ class VaultManager:
         include_completed: bool,
         results: list[TaskInfo],
         limit: int,
+        explicit_path: str | None = None,
     ) -> None:
         """Recursively find tasks in notes.
 
@@ -1073,6 +1151,7 @@ class VaultManager:
             include_completed: Whether to include completed tasks.
             results: List to append results to.
             limit: Maximum total results.
+            explicit_path: If set, user-configured exclusions are bypassed.
         """
         if len(results) >= limit:
             return
@@ -1091,13 +1170,18 @@ class VaultManager:
 
             full_path = path / entry
 
+            # Check folder exclusion
+            rel_path = str(full_path.relative_to(self.vault_path))
+            if self._is_excluded(rel_path, explicit_path=explicit_path):
+                continue
+
             try:
                 stat = await aiofiles.os.stat(full_path)
             except OSError:
                 continue
 
             if stat.st_mode & 0o170000 == 0o040000:  # Is directory
-                await self._find_tasks(full_path, include_completed, results, limit)
+                await self._find_tasks(full_path, include_completed, results, limit, explicit_path)
             elif entry.endswith(".md"):
                 content = await self._read_note_content(full_path)
                 if content is None:

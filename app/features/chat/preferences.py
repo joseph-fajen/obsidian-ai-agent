@@ -32,6 +32,10 @@ class UserPreferences(BaseModel):
     time_format: str = "HH:mm"
     default_folders: DefaultFolders = Field(default_factory=DefaultFolders)
     response_style: ResponseStyle = Field(default_factory=ResponseStyle)
+    search_exclude_folders: list[str] = Field(
+        default_factory=lambda: ["copilot"],
+        description="Folders to exclude from search operations",
+    )
 
 
 class VaultPreferences(BaseModel):
@@ -103,6 +107,12 @@ response_style:
   verbosity: "concise"  # concise | detailed
   use_bullet_points: true
   include_timestamps: false
+
+# Folders to exclude from search results (default: ["copilot"])
+# The _jasque folder is always excluded automatically
+search_exclude_folders:
+  - copilot
+  # - templates  # Uncomment to also exclude templates folder
 ---
 
 ## Additional Context

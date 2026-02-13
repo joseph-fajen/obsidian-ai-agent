@@ -12,6 +12,7 @@ class AgentDependencies:
 
     request_id: str = ""
     vault_path: Path = field(default_factory=lambda: Path("/vault"))
+    exclude_folders: list[str] = field(default_factory=lambda: [])
 
 
 class TokenUsage(BaseModel):

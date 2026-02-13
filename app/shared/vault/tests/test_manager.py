@@ -1023,3 +1023,159 @@ async def test_list_structure_folder_not_found(tmp_path: Path):
     manager = VaultManager(tmp_path)
     with pytest.raises(FolderNotFoundError):
         await manager.list_structure("nonexistent")
+
+
+# =============================================================================
+# Normalization Edge Case Tests
+# =============================================================================
+
+
+async def test_find_by_name_leading_underscore(tmp_path: Path):
+    """Find note with leading underscore in filename."""
+    (tmp_path / "_040 Linux Education.md").write_text("# Linux\n\nContent")
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("040 Linux Education")
+    assert len(results) >= 1
+    assert results[0].path == "_040 Linux Education.md"
+
+
+async def test_find_by_name_punctuation(tmp_path: Path):
+    """Find note with punctuation in filename."""
+    (tmp_path / "Dr. Mary Fu.md").write_text("# Doctor\n\nContent")
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("Dr Mary Fu")
+    assert len(results) >= 1
+    assert results[0].path == "Dr. Mary Fu.md"
+
+
+async def test_find_by_name_multiple_underscores(tmp_path: Path):
+    """Find note with multiple leading underscores."""
+    (tmp_path / "___test_note.md").write_text("# Test\n\nContent")
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("test note")
+    assert len(results) >= 1
+    assert results[0].path == "___test_note.md"
+
+
+async def test_find_by_name_apostrophe(tmp_path: Path):
+    """Find note with apostrophe in filename."""
+    (tmp_path / "What's New.md").write_text("# Updates\n\nContent")
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("Whats New")
+    assert len(results) >= 1
+    assert results[0].path == "What's New.md"
+
+
+async def test_find_by_name_question_mark(tmp_path: Path):
+    """Find note with question mark in query (stripped from query)."""
+    (tmp_path / "FAQ.md").write_text("# FAQ\n\nContent")
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("FAQ?")
+    assert len(results) >= 1
+    assert results[0].path == "FAQ.md"
+
+
+# =============================================================================
+# Folder Exclusion Tests
+# =============================================================================
+
+
+async def test_find_by_name_excludes_jasque_folder(tmp_path: Path):
+    """_jasque folder is always excluded from search."""
+    (tmp_path / "_jasque").mkdir()
+    (tmp_path / "_jasque" / "preferences.md").write_text("# Prefs")
+    (tmp_path / "preferences.md").write_text("# Real Prefs")
+
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("preferences")
+
+    assert len(results) == 1
+    assert results[0].path == "preferences.md"
+
+
+async def test_find_by_name_excludes_configured_folder(tmp_path: Path):
+    """User-configured folders are excluded."""
+    (tmp_path / "copilot").mkdir()
+    (tmp_path / "copilot" / "conversation.md").write_text("# Chat")
+    (tmp_path / "notes.md").write_text("# Notes")
+
+    manager = VaultManager(tmp_path, exclude_folders=["copilot"])
+    results = await manager.find_by_name("conversation")
+
+    assert len(results) == 0
+
+
+async def test_find_by_name_explicit_path_bypasses_exclusion(tmp_path: Path):
+    """Explicit path parameter bypasses user exclusions (but not _jasque)."""
+    (tmp_path / "copilot").mkdir()
+    (tmp_path / "copilot" / "conversation.md").write_text("# Chat")
+
+    manager = VaultManager(tmp_path, exclude_folders=["copilot"])
+    results = await manager.find_by_name("conversation", path="copilot")
+
+    assert len(results) == 1
+    assert results[0].path == "copilot/conversation.md"
+
+
+async def test_find_by_name_explicit_path_cannot_bypass_jasque(tmp_path: Path):
+    """Explicit path cannot bypass _jasque exclusion."""
+    (tmp_path / "_jasque").mkdir()
+    (tmp_path / "_jasque" / "preferences.md").write_text("# Prefs")
+
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_name("preferences", path="_jasque")
+
+    assert len(results) == 0
+
+
+async def test_search_text_excludes_folders(tmp_path: Path):
+    """search_text respects folder exclusions."""
+    (tmp_path / "copilot").mkdir()
+    (tmp_path / "copilot" / "chat.md").write_text("meeting notes here")
+    (tmp_path / "real.md").write_text("meeting notes here")
+
+    manager = VaultManager(tmp_path, exclude_folders=["copilot"])
+    results = await manager.search_text("meeting")
+
+    assert len(results) == 1
+    assert results[0].path == "real.md"
+
+
+async def test_find_by_tag_excludes_folders(tmp_path: Path):
+    """find_by_tag respects folder exclusions."""
+    (tmp_path / "_jasque").mkdir()
+    (tmp_path / "_jasque" / "system.md").write_text("---\ntags: [test]\n---\nSystem file")
+    (tmp_path / "user.md").write_text("---\ntags: [test]\n---\nUser file")
+
+    manager = VaultManager(tmp_path)
+    results = await manager.find_by_tag(["test"])
+
+    assert len(results) == 1
+    assert results[0].path == "user.md"
+
+
+async def test_get_backlinks_excludes_jasque(tmp_path: Path):
+    """get_backlinks excludes _jasque folder."""
+    (tmp_path / "_jasque").mkdir()
+    (tmp_path / "_jasque" / "system.md").write_text("Link to [[target]]")
+    (tmp_path / "normal.md").write_text("Link to [[target]]")
+    (tmp_path / "target.md").write_text("# Target")
+
+    manager = VaultManager(tmp_path)
+    results = await manager.get_backlinks("target.md")
+
+    assert len(results) == 1
+    assert results[0].path == "normal.md"
+
+
+async def test_list_tasks_excludes_folders(tmp_path: Path):
+    """list_tasks respects folder exclusions."""
+    (tmp_path / "copilot").mkdir()
+    (tmp_path / "copilot" / "chat.md").write_text("- [ ] Hidden task")
+    (tmp_path / "todo.md").write_text("- [ ] Visible task")
+
+    manager = VaultManager(tmp_path, exclude_folders=["copilot"])
+    results = await manager.list_tasks()
+
+    assert len(results) == 1
+    assert results[0].task_text == "Visible task"

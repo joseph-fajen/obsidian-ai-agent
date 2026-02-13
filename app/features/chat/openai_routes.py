@@ -64,13 +64,10 @@ async def chat_completions(
     agent = get_agent()
     request_id = get_request_id()
     settings = get_settings()
-    deps = AgentDependencies(
-        request_id=request_id,
-        vault_path=Path(settings.obsidian_vault_path),
-    )
 
-    # Load user preferences from vault
-    vault_manager = VaultManager(deps.vault_path)
+    # Load user preferences from vault first (we need exclusions for deps)
+    vault_path = Path(settings.obsidian_vault_path)
+    vault_manager = VaultManager(vault_path)
     preferences: VaultPreferences | None = None
     try:
         preferences = await vault_manager.load_preferences()
@@ -79,6 +76,17 @@ async def chat_completions(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         ) from e
+
+    # Extract exclusions from preferences
+    exclude_folders: list[str] = []
+    if preferences and preferences.structured.search_exclude_folders:
+        exclude_folders = preferences.structured.search_exclude_folders
+
+    deps = AgentDependencies(
+        request_id=request_id,
+        vault_path=vault_path,
+        exclude_folders=exclude_folders,
+    )
 
     # Extract the last user message for the agent
     user_message = extract_last_user_message(request.messages)

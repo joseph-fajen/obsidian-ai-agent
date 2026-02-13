@@ -143,7 +143,7 @@ def register_obsidian_query_vault_tool(
                 limit=10
             )
         """
-        vault = VaultManager(ctx.deps.vault_path)
+        vault = VaultManager(ctx.deps.vault_path, exclude_folders=list(ctx.deps.exclude_folders))
 
         logger.info(
             "vault.tool.query_started",
